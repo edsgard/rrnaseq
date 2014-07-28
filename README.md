@@ -31,6 +31,6 @@ cat rqc.sh
 
 ###GETTING HELP
 For a list of all available arguments for a program use the -h flag, for example:
-```bash
+```Shell
 pca -h
 ```
