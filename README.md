@@ -14,7 +14,6 @@ pkgs = c('DESeq2', 'genefilter', 'statmod', 'gplots', 'RColorBrewer', 'impute', 
 source('http://www.bioconductor.org/biocLite.R')
 biocLite(pkgs)
 ```
-
 2. Add the directory with binaries to your shell path (to for example .profile on OS X or .bashrc in Linux):
 export PATH="/home/user/prg/rrnaseq/bin:$PATH"
 
@@ -32,5 +31,6 @@ cat rqc.sh
 
 ###GETTING HELP
 For a list of all available arguments for a program use the -h flag, for example:
+```bash
 pca -h
-
+```
