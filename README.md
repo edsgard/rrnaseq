@@ -9,11 +9,11 @@ Currently the starting input is a tab-separated file with RPKM values and raw re
 
 ###INSTALLATION
 1. Install R dependencies with install.packages or via biocLite. In R:
-```R
-pkgs = c('DESeq2', 'genefilter', 'statmod', 'gplots', 'RColorBrewer', 'impute', 'moduleColor', 'graphics')
-source('http://www.bioconductor.org/biocLite.R')
-biocLite(pkgs)
-```
+
+		pkgs = c('DESeq2', 'genefilter', 'statmod', 'gplots', 'RColorBrewer', 'impute', 'moduleColor', 'graphics')
+		source('http://www.bioconductor.org/biocLite.R')
+		biocLite(pkgs)
+
 2. Add the directory with binaries to your shell path (to for example .profile on OS X or .bashrc in Linux):
 export PATH="/home/user/prg/rrnaseq/bin:$PATH"
 
