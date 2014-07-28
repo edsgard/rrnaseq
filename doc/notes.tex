@@ -1,0 +1,35 @@
+
+
+TODO
+------------------
+*Try the suite on the new embryodevel data
+
+
+IDEAS
+-------------------
+*Make a conf-file and parse the conf and call Rscripts from a python script, here one can also set which programs to call, and possibly in what order.
+*class (list): counts, rpkm, meta, qc.meta, ercc
+
+
+
+DONE
+-------------------
+*Create test dataset which one can run
+#Check mapstats for the first files with enough reads and that have ERCC:
+#H1007_506_701, H1008_506_702, H1009_506_703
+
+###
+#refseq_rpkm.tab
+###
+cd /mnt/crick/edsgard/nobackup/data/internal/preimplant/hsa/data/rpkmforgenes_star_hg19
+cat subdir5.refseq_rpkms.txt | awk -F'\'t '{print NF}' | head #299 samples
+cat subdir5.refseq_rpkms.txt | head -4 >head.tmp
+
+cat head.tmp | head -3 | awk -F'\t' -v OFS='\t' '{print $1, $42, $43, $44;}' >head.sel.tab
+cat rpkm.tmp | awk -F'\t' -v OFS='\t' '{print $1, $2, $43, $44, $45, $342, $343, $344;}' >rpkm.sel.tab
+cat head.sel.tab args.tmp rpkm.sel.tab >test.refseq_rpkms.tab
+
+###
+#mapstats log
+###
+#Log.final.out, qc/geneBody_coverage.geneBodyCoverage.txt, qc/jxn_annotation_ensgene.txt

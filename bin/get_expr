@@ -1,0 +1,56 @@
+#!/usr/bin/env Rscript
+#./get_expr -i rpkm.file -o out.dir
+
+###
+#Get opt
+###
+library('getopt')
+
+argv = commandArgs(trailingOnly = F)  
+scriptPath = dirname(sub("--file=", "", argv[grep("--file", argv)]))
+#source(file.path(scriptPath, '../lib/getopt.R')) #If one wants to avoid dependency of installed R package (getopt).
+argv = commandArgs(trailingOnly = T)
+
+spec = matrix(c(
+  'rpkm.files', 'i', 1, 'character',
+  'rsync.out.dir', 'o', 1, 'character',
+  'cloud.out.dir', 'c', 1, 'character',
+  'meta.file', 'm', 1, 'character',
+  'lib.dir', 'l', 1, 'character',
+  'help', 'h', 0, 'logical'
+), byrow=TRUE, ncol=4);
+opt = getopt(spec)
+
+usage <- function(spec){
+  cat(getopt(spec, command = 'get_expr', usage=TRUE));
+  cat(sprintf(" -i rpkm.files\n\tInput file, containing RPKMs and read counts for samples (columns) and genes (rows). This file is output by \"rpkmforgenes.py\" and must conform to that format. A comma-separated list of files, without spaces, is also allowed.\n"))
+  cat(sprintf(" -o rsync.out.dir\n\tOutput directory. Default: Directory of the input file.\n"))
+  cat(sprintf(" -c cloud.out.dir\n\tAn optional second output directory where RPKM rds files are put. Default: rsync.out.dir.\n"))
+  cat(sprintf(" -m meta.file\n\tInput file in rds-format, containing mapping statistics (output by the program get_meta). This is optional and will subset on the set of samples for which there is both data and meta-info available. Default: NA\n"))
+  cat(sprintf(" -l lib.dir\n\tLibrary directory with required R functions. Default: A subdir residing '../lib' relative to where this program was executed from.\n\n"))
+  q(status=1);
+}
+
+#Print usage if help flag set
+if(!is.null(opt[['help']])){
+  usage(spec)
+}
+
+#Error check that all required options were set
+if(is.null(opt[['rpkm.files']])){warning('Error: "i" is a required option'); usage(spec);}
+
+#Set defaults for optional options
+if(is.null(opt[['rsync.out.dir']])){opt[['rsync.out.dir']] = dirname(opt[['rpkm.files']][1]);}
+if(is.null(opt[['cloud.out.dir']])){opt[['cloud.out.dir']] = opt[['rsync.out.dir']];}
+if(is.null(opt[['meta.file']])){opt[['meta.file']] = NA;}
+if(is.null(opt[['lib.dir']])){opt[['lib.dir']] = file.path(scriptPath, '../lib');}
+
+#Source fcn lib
+source(file.path(opt[['lib.dir']], 'expr.lib.R'), chdir = TRUE)
+source(file.path(opt[['lib.dir']], 'main.lib.R'), chdir = TRUE)
+
+
+###
+#Execute
+###
+get.expr(opt[['rpkm.files']], opt[['rsync.out.dir']], opt[['cloud.out.dir']], opt[['meta.file']])

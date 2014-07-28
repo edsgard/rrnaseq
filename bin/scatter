@@ -1,0 +1,82 @@
+#!/usr/bin/env Rscript
+#scatter -d rpkm.rds -o sample.scatter.pdf -s 1,2,3
+
+
+###
+#Get opt
+###
+library('getopt')
+
+argv = commandArgs(trailingOnly = F)  
+scriptPath = dirname(sub("--file=", "", argv[grep("--file", argv)]))
+#source(file.path(scriptPath, '../lib/getopt.R')) #If one wants to avoid dependency of installed R package (getopt).
+argv = commandArgs(trailingOnly = T)
+
+spec = matrix(c(
+  'data.file', 'd', 1, 'character',
+  'scatter.pdf', 'o', 1, 'character',
+  'samples', 's', 1, 'character',
+  'transpose', 't', 0, 'logical',
+  'log.transform', 'g', 1, 'logical',
+  'lib.dir', 'l', 1, 'character',
+  'help', 'h', 0, 'logical'
+), byrow=TRUE, ncol=4);
+opt = getopt(spec)
+
+usage <- function(spec){
+  cat(getopt(spec, command = 'scatter', usage=TRUE));
+  cat(sprintf(" -d data.file\n\tInput file in rds-format, containing a (n x m) matrix with data (for example, rpkm.rds, output by the program get_expr).\n"))
+  cat(sprintf(" -o scatter.pdf\n\tOutput directory.\n"))
+  cat(sprintf(" -s samples\n\tA comma-separated list of samples to plot. No spaces allowed. The list can contain either numbers specifying the columns, or actual column names.\n"))
+  cat(sprintf(" -t transpose\n\tTranspose the data matrix, such that row vs row is plotted instead of column vs column.\n"))
+  cat(sprintf(" -g log.transform\n\tLog-transform function, to log the data. To skip log-transformation set it to \"0\". Default: log10\n"))
+  cat(sprintf(" -l lib.dir\n\tLibrary directory with required R functions. Default: A subdir residing at '../lib' relative to where this program was executed from.\n\n"))
+  q(status=1);
+}
+
+#Print usage if help flag set
+if(!is.null(opt[['help']])){
+  usage(spec)
+}
+
+#Error check that all required options were set
+if(is.null(opt[['data.file']])){warning('Error: "c" is a required option'); usage(spec);}
+if(is.null(opt[['scatter.pdf']])){warning('Error: "o" is a required option'); usage(spec);}
+
+#Set defaults for optional options
+if(is.null(opt[['samples']])){opt[['samples']] = NA}
+if(is.null(opt[['transpose']])){opt[['transpose']] = FALSE}
+if(is.null(opt[['log.transform']])){opt[['log.transform']] = 'log10';}
+if(is.null(opt[['lib.dir']])){opt[['lib.dir']] = file.path(scriptPath, '../lib');}
+
+
+###
+#Source fcn libs
+###
+source(file.path(opt[['lib.dir']], 'main.lib.R'), chdir = TRUE)
+
+
+###
+#Parse args
+###
+#samples
+samples.arg = strsplit(opt[['samples']], ',')[[1]]
+samples.num = tryCatch(as.numeric(samples.arg), warning=function(w) return(list(as.numeric(samples.arg), w)))
+if(is.list(samples.num)){
+    samples = samples.arg
+}else{
+    samples = samples.num
+}
+
+#log.fcn
+if(opt[['log.transform']] != '0'){
+    log.fcn = get(opt[['log.transform']])
+}else{
+    log.fcn = 0
+}
+
+
+###
+#Execute
+###
+scatter(opt[['data.file']], opt[['scatter.pdf']], samples, opt[['transpose']], log.fcn)

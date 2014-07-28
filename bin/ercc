@@ -1,0 +1,91 @@
+#!/usr/bin/env Rscript
+#ercc -m meta.rds -r rpkm.rds -c counts.rds -e ercc.rpkm.rds -d ercc.counts.rds -o out_dir
+
+
+###
+#Get opt
+###
+library('getopt')
+
+argv = commandArgs(trailingOnly = F)  
+scriptPath = dirname(sub("--file=", "", argv[grep("--file", argv)]))
+#source(file.path(scriptPath, '../lib/getopt.R')) #If one wants to avoid dependency of installed R package (getopt).
+argv = commandArgs(trailingOnly = T)
+
+spec = matrix(c(    
+  'meta.file', 'm', 1, 'character',
+  'real.rpkm.file', 'r', 1, 'character',
+  'real.counts.file', 'c', 1, 'character',
+  'ercc.rpkm.file', 'e', 1, 'character',
+  'ercc.counts.file', 'd', 1, 'character',
+  'out.dir', 'o', 1, 'character',  
+  'strat.factor', 's', 1, 'character',
+  'n.ercc.min', 'n', 1, 'numeric',
+  'min.prop', 'p', 1, 'double',
+  'min.rpkm', 'q', 1, 'double',
+  'log.size.cutoff', 'u', 1, 'double',
+  'ercc.rpkm.frac.adjust', 'f', 1, 'logical',
+  'cex', 'x', 1, 'double',
+  'annot.file', 'a', 1, 'character',
+  'lib.dir', 'l', 1, 'character',
+  'help', 'h', 0, 'logical'
+), byrow=TRUE, ncol=4);
+opt = getopt(spec)
+
+usage <- function(spec){
+  cat(getopt(spec, command = 'ercc', usage=TRUE));
+  cat(sprintf(" -m meta.file\n\tInput file in rds-format, containing mapping statistics (output by the program get_meta).\n"))
+  cat(sprintf(" -r real.rpkm.file\n\tInput file in rds-format, containing normalized read counts for all samples and features (output by the program get_expr).\n"))
+  cat(sprintf(" -c real.counts.file\n\tInput file in rds-format, containing raw read counts for all samples and features (output by the program get_expr).\n"))
+  cat(sprintf(" -e ercc.rpkm.file\n\tInput file in rds-format, containing normalized read counts for all samples and ERCC spike-in features (output by the program get_expr).\n"))
+  cat(sprintf(" -d ercc.counts.file\n\tInput file in rds-format, containing raw read counts for all samples and ERCC spike-in features (output by the program get_expr).\n"))
+  cat(sprintf(" -o out.dir\n\tOutput directory plots are saved.\n"))
+  cat(sprintf(" -s strat.factor\n\tStratification factor, which will group the samples in some of the plots. Default: nostrat\n"))
+  cat(sprintf(" -n n.ercc.min\n\tMinimum number of expressed ERCC transcripts, otherwise sample will be filtered. Default: 2\n"))
+  cat(sprintf(" -p min.prop\n\tMinimum proportion of expressed ERCC transcripts, otherwise sample will be filtered. Default: 0.5\n"))
+  cat(sprintf(" -q min.rpkm\n\tRPKM expression cutoff determining if a transcript is expressed or not. Default: 1\n"))
+  cat(sprintf(" -u log.size.cutoff\n\tMaximum size-factor cutoff, based on the fraction of total ERCC expression of a sample divided with expression from all its transcripts. Size-factor is calculated compared to the median of such fractions. Samples deviating from the median more than log.size.cutoff times are filtered. Default: 1\n"))
+  cat(sprintf(" -f ercc.rpkm.frac.adjust\n\tAdjust the ERCC RPKM values based on the RPKM ERCC size factor (fraction of ERCC expression divided with total expression). Default: FALSE\n"))
+  cat(sprintf(" -x cex\n\tMagnification level of the text in the figures. Default: 0.8\n"))
+  cat(sprintf(" -a annot.file\n\tInput file in rds-format, containing spike-in annotation downloaded from life-technologies web-site. Default: cmds_095046.rds, residing in a a subdir '../annot' relative to where this program was executed from.\n"))
+  cat(sprintf(" -l lib.dir\n\tLibrary directory with required R functions. Default: A subdir residing at '../lib' relative to where this program was executed from.\n\n"))
+  q(status=1);
+}
+
+#Print usage if help flag set
+if(!is.null(opt[['help']])){
+  usage(spec)
+}
+
+#Error check that all required options were set
+if(is.null(opt[['meta.file']])){warning('Error: "m" is a required option'); usage(spec);}
+if(is.null(opt[['real.rpkm.file']])){warning('Error: "r" is a required option'); usage(spec);}
+if(is.null(opt[['real.counts.file']])){warning('Error: "c" is a required option'); usage(spec);}
+if(is.null(opt[['ercc.rpkm.file']])){warning('Error: "e" is a required option'); usage(spec);}
+if(is.null(opt[['ercc.counts.file']])){warning('Error: "d" is a required option'); usage(spec);}
+if(is.null(opt[['out.dir']])){warning('Error: "o" is a required option'); usage(spec);}
+
+#Set defaults for optional options
+if(is.null(opt[['strat.factor']])){opt[['strat.factor']] = 'nostrat';}
+if(is.null(opt[['n.ercc.min']])){opt[['n.ercc.min']] = 2;}
+if(is.null(opt[['min.prop']])){opt[['min.prop']] = 0.5;}
+if(is.null(opt[['min.rpkm']])){opt[['min.rpkm']] = 1;}
+if(is.null(opt[['log.size.cutoff']])){opt[['log.size.cutoff']] = 1;}
+if(is.null(opt[['ercc.rpkm.frac.adjust']])){opt[['ercc.rpkm.frac.adjust']] = FALSE;}
+if(is.null(opt[['cex']])){opt[['cex']] = 0.8;}
+if(is.null(opt[['annot.file']])){opt[['annot.file']] = file.path(scriptPath, '../annot', 'cms_095046.rds');}
+if(is.null(opt[['lib.dir']])){opt[['lib.dir']] = file.path(scriptPath, '../lib');}
+
+
+###
+#Source fcn libs
+###
+source(file.path(opt[['lib.dir']], 'expr.lib.R'), chdir = TRUE)
+source(file.path(opt[['lib.dir']], 'ercc.lib.R'), chdir = TRUE)
+source(file.path(opt[['lib.dir']], 'main.lib.R'), chdir = TRUE)
+
+
+###
+#Execute
+###
+ercc(opt[['meta.file']], opt[['real.rpkm.file']], opt[['real.counts.file']], opt[['ercc.rpkm.file']], opt[['ercc.counts.file']], opt[['annot.file']], opt[['out.dir']], opt[['strat.factor']], opt[['n.ercc.min']], opt[['min.prop']], opt[['min.rpkm']], opt[['log.size.cutoff']], opt[['ercc.rpkm.frac.adjust']], opt[['cex']])

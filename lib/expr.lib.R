@@ -1,0 +1,406 @@
+
+
+add.qc.col <- function(qc.meta.mat, qc.col){
+    if(length(which(colnames(qc.meta.mat) == qc.col)) == 0){
+        new.qc.col = rep(0, nrow(qc.meta.mat))
+        qc.meta.mat = cbind(qc.meta.mat, new.qc.col)
+        colnames(qc.meta.mat)[ncol(qc.meta.mat)] = qc.col
+    }
+    return(qc.meta.mat)
+}
+
+get.qc.df <- function(qc.meta.file, meta.mat){
+    
+    if(!file.exists(qc.meta.file)){
+        samples = meta.mat[, 'id']
+        n.samples = length(samples)
+        #qc.cols = c('n.reads', 'prc.reads.mapped', 'n.genes.expr', 'spear.cor') #pca
+        qc.meta.mat = as.data.frame(matrix(0, nrow = n.samples, ncol = 0))
+        rownames(qc.meta.mat) = samples
+    }else{
+        qc.meta.mat = readRDS(qc.meta.file)
+    }
+
+    return(qc.meta.mat)
+}
+
+plot.heatmap.sample <- function(cor.res, col.clust, meta.mat, strat.factor, ...){
+    
+    library('gplots')
+    
+    #colormaps
+    strat.factor.col = paste(strat.factor, '.color', sep = '')
+    stratum.col = as.character(meta.mat[colnames(cor.res), strat.factor.col])
+    col.pa = greenred(100) #alt: maPalette{marray)
+    #col.pa = colorRampPalette(brewer.pal(9, "Blues")[4:9])(100)
+    strat.factor2color.map = unique(meta.mat[, c(strat.factor, strat.factor.col)])
+    
+    ###
+    #Plot
+    ###
+    heatmap.2(cor.res, Rowv = as.dendrogram(col.clust), Colv = as.dendrogram(col.clust), col = col.pa, trace = 'none', symm = TRUE, ColSideColors = stratum.col, ...)
+    legend('topright', legend = strat.factor2color.map[, strat.factor], col = strat.factor2color.map[, strat.factor.col], lty = 1)
+
+}
+
+gene2nsamples.expr.filter <- function(rpkm, n.cells.cutoff, rpkm.cutoff, strat.factor, meta.mat){
+        
+    #number of cells with expression per stratum
+    gene2nsamples.expr.list = gene2nsamples(rpkm, meta.mat, strat.factor, rpkm.cutoff)
+
+    n.strata = length(gene2nsamples.expr.list)
+    fail.genes.list = lapply(gene2nsamples.expr.list, function(jstratum.gene2nsamples, n.cells.cutoff){names(jstratum.gene2nsamples)[which(jstratum.gene2nsamples < n.cells.cutoff)]}, n.cells.cutoff = n.cells.cutoff)
+    fail.genes2nstrata = table(unlist(fail.genes.list))
+    fail.genes = names(fail.genes2nstrata)[which(fail.genes2nstrata == n.strata)]
+    pass.genes = setdiff(rownames(rpkm), fail.genes)
+    
+    rpkm = rpkm[pass.genes, ]
+
+    return(rpkm)
+}
+
+plot.gene2nsamples.expr <- function(rpkm, meta.mat, strat.factor, rpkm.cutoff, n.cells.cutoff){
+    
+    library('RColorBrewer')
+
+    #number of cells with expression per stratum
+    gene2nsamples.expr.list = gene2nsamples(rpkm, meta.mat, strat.factor, rpkm.cutoff)
+        
+    #"hist"
+    tables = lapply(gene2nsamples.expr.list, table)
+    max.cells = max(as.integer(unlist(lapply(tables, names))))
+    breaks = seq(0, max.cells, by = 1)
+    hist.list = lapply(gene2nsamples.expr.list, hist, breaks = breaks, plot = FALSE)
+  
+    #colormap
+    strat.factor.col = paste(strat.factor, '.color', sep = '')
+    stratum2color.map = unique(meta.mat[, c(strat.factor, strat.factor.col)])
+    rownames(stratum2color.map) = stratum2color.map[, strat.factor]
+
+    #axis limits
+    xlim = c(0, max.cells)
+    ylim = range(unlist(lapply(hist.list, '[[', 'density')))
+    ylim[2] = ylim[2] + ylim[2] * 0.1
+  
+    #plot
+    strata = names(hist.list)
+    j.stratum = 1
+    stratum = strata[j.stratum]
+    j.hist = hist.list[[stratum]]
+    plot(x = j.hist[['mids']] - 0.5, j.hist[['density']], col = stratum2color.map[stratum, strat.factor.col], xlab = '# of cells', xlim = xlim, main = '', type = 'p', pch = 16, ylim = ylim, ylab = 'Fraction of all genes')
+    for(j.stratum in 1:length(strata)){
+      stratum = strata[j.stratum]
+      j.hist = hist.list[[stratum]]
+      points(x = j.hist[['mids']] - 0.5, j.hist[['density']], col = stratum2color.map[stratum, strat.factor.col], xlim = xlim, pch = 16)
+    }
+    legend('topright', legend = stratum2color.map[, strat.factor], col = stratum2color.map[, strat.factor.col], lty = 1)
+    abline(v = n.cells.cutoff - 0.1)
+
+}
+    
+gene2nsamples <- function(rpkm, meta.mat, strat.factor, rpkm.cutoff){
+        
+    #number of cells with expression per stratum
+    if(strat.factor == 'unstrat'){
+        stratum2id = list(unstrat = colnames(rpkm))
+    }else{
+        stratum2id = tapply(meta.mat[, 'id'], meta.mat[, strat.factor], unique)
+    }
+    gene2nsamples.expr.list = lapply(stratum2id, function(cells, rpkm, rpkm.cutoff){rpkm = rpkm[, cells]; gene2fracsamples.expr = apply(rpkm, 1, function(jgene.rpkm, rpkm.cutoff){length(which(jgene.rpkm > rpkm.cutoff));}, rpkm.cutoff = rpkm.cutoff)}, rpkm = rpkm, rpkm.cutoff = rpkm.cutoff)
+
+    return(gene2nsamples.expr.list)
+}
+
+plot.sample.expr.dist <- function(expr.mat, meta.mat, strat.factor){
+
+    #Get dists
+    density.list = apply(expr.mat, 2, density)
+    
+    #Plot
+    strat.factor.col = paste(strat.factor, '.color', sep = '')
+    strat2color.map = unique(meta.mat[, c(strat.factor, strat.factor.col)])
+
+    n.samples = length(density.list)
+    xlim = range(unlist(lapply(density.list, '[[', 'x'))) #xlim = c(-100, 100)
+    ylim = range(unlist(lapply(density.list, '[[', 'y')))
+    
+    j.sample = 1
+    plot(density.list[[j.sample]], xlim = xlim, ylim = ylim, col = meta.mat[j.sample, strat.factor.col], main = '', xlab = 'log10(RPKM)')
+    for(j.sample in 2:n.samples){
+        lines(density.list[[j.sample]], col = meta.mat[j.sample, strat.factor.col])
+    }
+    legend('topright', legend = strat2color.map[, strat.factor], col = strat2color.map[, strat.factor.col], lty = 1)
+
+}
+
+get.rpkm.files <- function(rpkm.cloud.dir, rpkm.raw.dir){
+    rpkm.file = file.path(rpkm.cloud.dir, 'rpkm.rds')
+    counts.file = file.path(rpkm.raw.dir, 'counts.rds')
+    ercc.counts.file = file.path(rpkm.cloud.dir, 'ercc.counts.rds')
+    ercc.rpkm.file = file.path(rpkm.cloud.dir, 'ercc.rpkm.rds')
+    rds.files = c(rpkm.file, counts.file, ercc.counts.file, ercc.rpkm.file)
+    names(rds.files) = gsub('\\.rds$', '', unlist(lapply(rds.files, basename)))
+
+    return(rds.files)
+}
+
+get.tab.files <- function(rpkm.raw.dir){
+    rpkm.tab.file = file.path(rpkm.raw.dir, 'rpkm.tab')
+    counts.tab.file = file.path(rpkm.raw.dir, 'counts.tab')
+    tab.files = c(rpkm.tab.file, counts.tab.file)
+    names(tab.files) = gsub('\\.tab$', '', unlist(lapply(tab.files, basename)))
+
+    return(tab.files)
+}
+
+read.rpkm <- function(rpkm.files){
+    
+    #the first comment line #samples should be kept, ignore the other comment lines
+    base.files = basename(rpkm.files)
+    n.files = length(base.files)
+    
+    counts.list = list()
+    length(counts.list) = n.files
+    names(counts.list) = base.files
+    
+    rpkm.list = list()
+    length(rpkm.list) = n.files
+    names(rpkm.list) = base.files
+    for(j.file in rpkm.files){
+        print(j.file)
+        
+        header = read.table(j.file, sep = '\t', stringsAsFactors = FALSE, nrows = 1, comment.char = '')
+        header = header[2:length(header)]
+        data.df = read.table(j.file, sep = '\t', header = FALSE, stringsAsFactors = FALSE)
+        
+        gene.id = data.df[, 1]
+        nm.id = data.df[, 2]
+        gene2nm.mat = cbind(gene.id, nm.id)
+        data.df = data.df[, setdiff(1:ncol(data.df), 1:2)]
+        n.samples = length(header)
+        rpkm = as.matrix(data.df[, 1:n.samples])
+        counts = as.matrix(data.df[, (n.samples+1):ncol(data.df)])
+
+        #Use second ID column for the ERCC ids
+        ercc.ind = grep('ERCC-', nm.id)
+        gene.id[ercc.ind] = nm.id[ercc.ind]
+
+        #Set gene.id as rowname
+        colnames(rpkm) = header
+        colnames(counts) = header
+        rownames(rpkm) = gene.id
+        rownames(counts) = gene.id
+        rpkm.list[[basename(j.file)]] = rpkm
+        counts.list[[basename(j.file)]] = counts
+    }
+    
+    #handle non-unique gene-names (change to uniq.genes names)
+    rpkm.list = lapply(rpkm.list, set.unique.rownames)
+    counts.list = lapply(counts.list, set.unique.rownames)
+    
+    #bind rpkm
+    gene.names = rownames(rpkm.list[[1]])
+    n.genes = length(gene.names)
+    all.rpkm = matrix(nrow = n.genes, ncol = 0)
+    for(j.rpkm in rpkm.list){
+        all.rpkm = cbind(all.rpkm, j.rpkm[gene.names, ])
+    }
+    rpkm = all.rpkm
+    
+    #Exclude ERCC ids
+    ercc.id = rownames(rpkm)[grep('^ERCC-', rownames(rpkm))]
+    rpkm = rpkm[setdiff(rownames(rpkm), ercc.id), ]
+
+    #bind counts
+    gene.names = rownames(counts.list[[1]])
+    n.genes = length(gene.names)
+    all.counts = matrix(nrow = n.genes, ncol = 0)
+    for(j.counts in counts.list){
+        all.counts = cbind(all.counts, j.counts[gene.names, ])
+    }
+    counts = all.counts
+    
+    #Exclude ERCC ids
+    ercc.id = rownames(counts)[grep('^ERCC-', rownames(counts))]
+    counts = counts[setdiff(rownames(counts), ercc.id), ]
+    
+    
+    
+    #####
+    #Get ERCC
+    #####
+    ercc.id = rownames(rpkm.list[[1]])[grep('^ERCC-', rownames(rpkm.list[[1]]))]
+    n.ercc = length(ercc.id)
+    if(n.ercc != 92){
+        warning('92 ERCCs not present in first file')
+    }
+    
+    #bind rpkm
+    all.rpkm = matrix(nrow = n.ercc, ncol = 0)
+    for(j.rpkm in rpkm.list){
+        j.ercc.id = intersect(rownames(j.rpkm), ercc.id)
+        if(length(j.ercc.id) != n.ercc){
+            warning("All ERCC not present in rpkm file.")
+            j.ercc = matrix(NA, nrow = n.ercc, ncol = ncol(j.rpkm), dimnames = list(ercc.id, colnames(j.rpkm)))
+        }else{
+            j.ercc = j.rpkm[ercc.id, ]
+        }
+        all.rpkm = cbind(all.rpkm, j.ercc)
+    }
+    rownames(all.rpkm) = ercc.id
+    ercc.rpkm = all.rpkm
+    
+    #bind counts
+    all.counts = matrix(nrow = n.ercc, ncol = 0)
+    for(j.counts in counts.list){
+        j.ercc.id = intersect(rownames(j.counts), ercc.id)
+        if(length(j.ercc.id) != n.ercc){
+            warning("All ERCC not present in counts file.")
+            j.ercc = matrix(NA, nrow = n.ercc, ncol = ncol(j.counts), dimnames = list(ercc.id, colnames(j.counts)))
+        }else{
+            j.ercc = j.counts[ercc.id, ]
+        }
+        all.counts = cbind(all.counts, j.ercc)        
+    }
+    rownames(all.counts) = ercc.id
+    ercc.counts = all.counts
+    
+    
+    return(list(rpkm = rpkm, counts = counts, ercc.rpkm = ercc.rpkm, ercc.counts = ercc.counts))
+}
+
+read.haplo.rpkm <- function(rpkm.files, id = 'gene'){
+
+    #the first comment line #samples should be kept, ignore the other comment lines
+    base.files = basename(rpkm.files)
+    n.files = length(base.files)
+    
+    rpkm.list = list()
+    length(rpkm.list) = n.files
+    names(rpkm.list) = base.files
+    for(j.file in rpkm.files){
+        print(j.file)
+        
+        header = read.table(j.file, sep = '\t', stringsAsFactors = FALSE, nrows = 1, comment.char = '')
+        header = header[2:length(header)]
+        data.df = read.table(j.file, sep = '\t', header = FALSE, stringsAsFactors = FALSE)
+
+        if(id == 'gene'){
+            gene.id = data.df[, 1]
+        }
+        if(id == 'nm'){
+            gene.id = data.df[, 2]
+        }
+        data.df = data.df[, setdiff(1:ncol(data.df), 1:2)]
+        n.samples = length(header)
+        rpkm = as.matrix(data.df[, 1:n.samples])
+        
+        colnames(rpkm) = header
+        rownames(rpkm) = gene.id
+        rpkm.list[[basename(j.file)]] = rpkm
+    }
+
+    #rm ERCC
+    ercc.id = gene.id[grep('^ERCC_', gene.id)]
+    rpkm.list = lapply(rpkm.list, function(rpkm, ercc.id){rpkm[setdiff(rownames(rpkm), ercc.id), ];}, ercc.id = ercc.id)
+    
+    #handle non-unique gene-names (change to uniq.genes names)
+    rpkm.list = lapply(rpkm.list, set.unique.rownames)
+    
+    return(rpkm.list)
+}
+
+set.unique.rownames <- function(rpkm){
+       
+    gene.names = rownames(rpkm)
+
+    #add uid and gene.uid col
+    n.genes = length(gene.names)
+    uid = 1:n.genes
+    gene2uid = cbind(gene.names, uid)
+    gene.uid = apply(gene2uid, 1, function(jrow){paste(jrow[1], '.uid_', jrow[2], sep = '')})
+    gene2uid = cbind(gene2uid, gene.uid)
+
+    #set rpkm rownames to gene.uid (no reordering has taken place)
+    rownames(rpkm) = gene2uid[, 'gene.uid']
+
+    #strip uid suffix from unique genes    
+    gene2n = sort(table(gene.names), decreasing = TRUE)
+    gene2uid = merge(as.data.frame(gene2uid, stringsAsFactors = FALSE), as.matrix(gene2n), by.x = 'gene.names', by.y = 'row.names')
+    colnames(gene2uid)[ncol(gene2uid)] = 'n.rep'
+
+    strip.ind = which(gene2uid[, 'n.rep'] == 1)
+    gene.uid.stripped = gene2uid[, 'gene.uid']
+    names(gene.uid.stripped) = gene2uid[, 'gene.uid']
+    gene.uid.stripped[strip.ind] = gsub('\\.uid_[0-9]+$', '', gene.uid.stripped[strip.ind])
+
+    #set rpkm rownames to gene.uid.stripped
+    rownames(rpkm) = gene.uid.stripped[rownames(rpkm)]
+            
+    return(rpkm)
+}
+
+meta.add.colormaps <- function(meta.mat){
+
+    library('RColorBrewer')
+    
+    #stage2color
+    stages = sort(unique(meta.mat[, 'stage']))
+    n.stages = length(stages)
+    stage2color.map = 2:(n.stages + 1)
+    names(stage2color.map) = stages
+    stage.color = stage2color.map[meta.mat[, 'stage']]
+    meta.mat = cbind(meta.mat, stage.color)
+
+    #stage.ind2color
+    stage.ind = gsub(' ', '', apply(meta.mat[, c('stage', 'individual')], 1, paste, collapse = '.'))
+    meta.mat = cbind(meta.mat, stage.ind)
+    factor = 'stage.ind'
+    factors = sort(unique(meta.mat[, factor]))
+    n.factors = length(factors)
+    factor2color.map = brewer.pal(n.factors, 'Set3') #Possibly better, because Set3 is so bright: pal8 = brewer.pal(8, 'Dark2'); colorRampPalette(pal8)(10)
+    names(factor2color.map) = factors
+    factor.color = factor2color.map[meta.mat[, factor]]    
+    meta.mat = cbind(meta.mat, factor.color)
+    colnames(meta.mat)[ncol(meta.mat)] = paste(factor, 'color', sep = '.')
+    
+    #Sort by id
+    meta.mat = meta.mat[order(meta.mat[, 'id']), ]
+
+    #coerce all factor cols to chars
+    factor.cols = which(unlist(lapply(meta.mat, is.factor)))
+    meta.mat[, factor.cols] = lapply(meta.mat[, factor.cols], as.character)
+
+    return(meta.mat)
+}
+
+add.factor.color <- function(meta.mat, factor){
+    library('RColorBrewer')
+    
+    factors = sort(unique(meta.mat[, factor]))
+    n.factors = length(factors)
+    if(n.factors < 3){
+        factor2color.map = brewer.pal(3, 'Dark2')[1:n.factors]
+    }else{
+        if(n.factors > 8){
+            factor2color.map = colorRampPalette(brewer.pal(8, 'Dark2'))(n.factors)
+        }else{
+            factor2color.map = brewer.pal(n.factors, 'Dark2')[1:n.factors]
+        }
+    }
+    names(factor2color.map) = factors
+    factor.color = factor2color.map[as.character(meta.mat[, factor])]
+    meta.mat = cbind(meta.mat, factor.color, stringsAsFactors = FALSE)
+    colnames(meta.mat)[ncol(meta.mat)] = paste(factor, 'color', sep = '.')
+
+    return(meta.mat)
+}
+
+rm.zero.genes <- function(data.mat){
+#Rm all zero rows
+    
+    zero.genes = which(apply(data.mat, 1, function(jrow){all(jrow == 0)}))
+    data.mat = data.mat[setdiff(1:nrow(data.mat), zero.genes), ]
+
+    return(data.mat)
+}

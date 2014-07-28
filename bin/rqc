@@ -1,0 +1,149 @@
+#!/bin/bash
+
+
+#########
+#Parse args
+#########
+
+#usage
+function usage () {
+    echo "Usage: rqc -m sample_meta_file -e expr_tab_file -d datadir -p pdfdir -b brenneckedir [-yh]";    
+    echo "All arguments are required apart from the dry-run (-y) and help flag (-h). The arguments are as follows:";
+    printf " -m sample_meta_file\n\tTab-separated input file where first column is sample name and following columns contain meta-info about the samples. Typically, mapstats.tab output by running make_summary_starlog.pl.\n"
+    printf " -e expr_tab_file\n\tTab-separated input file with expression values. Only accepts the output by rpkmforgenes.py which includes both RPKM values and raw read counts.\n"
+    printf " -d datadir\n\tOutput directory where rds data structures are put.\n"
+    printf " -p pdfdir\n\tOutput directory where pdf plots are put.\n"
+    printf " -b brenneckedir\n\tOutput directory where output from differential expression analysis similar to Brennecke et al is put.\n";
+    printf " -y\n\tDry-run\n"
+    printf " -h\n\tPrint this help\n"
+}
+
+#Get args provided by user
+while getopts :m:e:d:p:b:yh option
+do
+    case $option in
+        m) sample_meta_file=$OPTARG;;
+        e) expr_tab_file=$OPTARG;;
+	d) datadir=$OPTARG;;
+	p) pdfdir=$OPTARG;;
+	b) brenneckedir=$OPTARG;;
+	y) dryrun=true;;
+        h) usage; exit 0;;
+        \?) echo "Invalid option -$OPTARG. Please run 'rqc -h' for help"
+            exit 1;;
+        :) echo "Option -$OPTARG requires an argument. Please run 'rqc -h' for help"
+            exit 1;;
+    esac
+done
+
+#IN
+#sample_meta_file (typically, mapstats.tab output by running make_summary_starlog.pl)
+#expr_tab_file (typically, refseq_rpkms.txt output by rpkmforgenes.py)
+
+#OUT
+#datadir
+#pdfdir
+#brenneckedir (diffexpdir)
+#metadir=datadir (meta.rds)
+#qcdir=datadir (qc.rds)
+
+#Default values
+b=100
+pc_comp='1,2,3'
+scatter_samples='1,2,3'
+filter_cols='n.genes.expr,spearman.cor'
+
+
+
+echo '#########' >rqc.sh
+echo '#Change working dir to output dir' >>rqc.sh
+echo '#########' >>rqc.sh
+echo cd $datadir >>rqc.sh
+
+
+
+printf '\n\n#########\n' >>rqc.sh
+echo '#Get data' >>rqc.sh
+echo '#########' >>rqc.sh
+
+echo '#Get sample meta-information' >>rqc.sh
+echo get_meta -i $sample_meta_file -o meta.rds >>rqc.sh
+
+printf '\n#Get expression data-structures\n' >>rqc.sh
+echo get_expr -i $expr_tab_file -o ${datadir} >>rqc.sh
+
+
+
+printf '\n\n#########\n' >>rqc.sh
+echo '#Plot basic expression QC-metrics' >>rqc.sh
+echo '#########' >>rqc.sh
+
+echo '#Plot mapping stats' >>rqc.sh
+echo mapstats -m meta.rds -c counts.rds -o ${pdfdir}/seq_mapping -q qc.rds >>rqc.sh
+
+printf '\n#Plot sample expression histogram\n' >>rqc.sh
+echo sample_expr_dhist -m meta.rds -r rpkm.rds -o ${pdfdir}/basic/sample.expr.dens.pdf >>rqc.sh
+
+printf '\n#Filter genes based on the number of samples they are expressed in and plot histogram of it\n' >>rqc.sh
+echo gene_filter -m meta.rds -r rpkm.rds -o rpkm.postqc.rds -d ${pdfdir}/basic/gene2nsamples.pdf >>rqc.sh
+
+printf '\n#Plot number of expressed genes per sample\n' >>rqc.sh
+echo sample2ngenes_expr -m meta.rds -r rpkm.rds -o ${pdfdir}/basic/sample2ngenes.dens.pdf -q qc.rds >>rqc.sh
+
+printf '\n#Sample distance heatmap\n' >>rqc.sh
+echo sampledist_heatmap -m meta.rds -r rpkm.rds -o ${pdfdir}/sampledist/sample.heatmap.pdf >>rqc.sh
+
+printf '\n#Sample distance boxplot\n' >>rqc.sh
+echo sampledist_boxplot -m meta.rds -r rpkm.rds -o ${pdfdir}/sampledist/sample.cor.pdf -q qc.rds >>rqc.sh
+
+printf '\n#Sample hierarchical clustering\n' >>rqc.sh
+echo '#no boostrap' >>rqc.sh
+echo sample_hclust -m meta.rds -r rpkm.rds -o ${pdfdir}/sampledist/sample.hclust.pdf -b 0 >>rqc.sh
+echo '#with bootstrap' >>rqc.sh
+echo sample_hclust -m meta.rds -r rpkm.rds -o ${pdfdir}/sampledist/sample.hclust.b_${b}.pdf -b $b >>rqc.sh
+
+printf '\n#PCA\n' >>rqc.sh
+echo pca -m meta.rds -r rpkm.rds -o ${pdfdir}/pca/pca.pdf -c $pc_comp >>rqc.sh
+
+printf '\n#Scatter plot\n' >>rqc.sh
+echo scatter -d rpkm.rds -o ${pdfdir}/scatter/sample.scatter.pdf -s $scatter_samples >>rqc.sh
+
+
+
+printf '\n\n#########\n' >>rqc.sh
+echo '#Apply sample filters (and gene filter on the new set of samples)' >>rqc.sh
+echo '#########' >>rqc.sh
+printf '\n#Filter samples based on qc-measures\n' >>rqc.sh
+echo sample_filter -d rpkm.rds -q qc.rds -o rpkm.postqc.rds -f $filter_cols >>rqc.sh
+echo sample_filter -d counts.rds -q qc.rds -o counts.postqc.rds -f $filter_cols >>rqc.sh
+
+printf '\n#Filter genes using the new (filtered) set of samples\n' >>rqc.sh
+echo gene_filter -m meta.rds -r rpkm.postqc.rds -o rpkm.postqc.rds -p FALSE >>rqc.sh
+echo gene_filter -m meta.rds -r counts.postqc.rds -o counts.postqc.rds -p FALSE >>rqc.sh
+
+
+
+printf '\n\n#########\n' >>rqc.sh
+echo '#Plot ERCC stats' >>rqc.sh
+echo '#########' >>rqc.sh
+echo ercc -m meta.rds -r rpkm.rds -c counts.rds -e ercc.rpkm.rds -d ercc.counts.rds -o ${pdfdir}/ercc >>rqc.sh
+
+
+
+printf '\n\n#########\n' >>rqc.sh
+echo '#Differential expression analysis' >>rqc.sh
+echo '#########' >>rqc.sh
+
+echo '#Find genes with higher variance than the technical variance (ERCC)' >>rqc.sh
+echo var_genes_brennecke -m meta.rds -c counts.postqc.rds -e ercc.counts.rds -o ${brenneckedir} >>rqc.sh
+
+
+
+#########
+#Execute
+#########
+if [ ${dryrun} = "false" ]
+then
+    echo 'rqc has started!'
+    sh rqc.sh
+fi

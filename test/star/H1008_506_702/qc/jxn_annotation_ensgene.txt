@@ -1,0 +1,21 @@
+Reading reference bed file:  /mnt/davidson/sandberglab/pipeline2.0/additionaldata/scripture/hg19ensgene.bed  ...  Done
+Load BAM file ...  Done
+
+===================================================================
+Total splicing  Events:	16908
+Known Splicing Events:	14851
+Partial Novel Splicing Events:	203
+Novel Splicing Events:	1853
+
+Total splicing  Junctions:	8600
+Known Splicing Junctions:	7717
+Partial Novel Splicing Junctions:	167
+Novel Splicing Junctions:	716
+
+===================================================================
+WARNING: ignoring environment value of R_HOME
+null device 
+          1 
+null device 
+          1 
+total = 16908

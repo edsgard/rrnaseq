@@ -1,0 +1,98 @@
+#!/usr/bin/env Rscript
+#var_genes_brennecke -m meta.rds -c counts.postqc.rds -e ercc.counts.rds -o out_dir
+#Find the most variable genes as compared to tech var
+#OUT: Plots and stats.mat.rds (test-stats for all genes)
+
+
+###
+#Get opt
+###
+library('getopt')
+
+argv = commandArgs(trailingOnly = F)  
+scriptPath = dirname(sub("--file=", "", argv[grep("--file", argv)]))
+#source(file.path(scriptPath, '../lib/getopt.R')) #If one wants to avoid dependency of installed R package (getopt).
+argv = commandArgs(trailingOnly = T)
+
+spec = matrix(c(    
+    'meta.file', 'm', 1, 'character',
+    'counts.file', 'c', 1, 'character',
+    'ercc.counts.file', 'e', 1, 'character',
+    'out.dir', 'o', 1, 'character',  
+    'strat.factor', 's', 1, 'character',
+    'min.biol.cv2', 'b', 1, 'double',  
+    'alpha', 'a', 1, 'double',
+    'n.top', 't', 1, 'numeric',
+    'n.ercc.min', 'n', 1, 'numeric',
+    'min.count', 'j', 1, 'numeric',
+    'min.prop', 'p', 1, 'double',
+    'min.cv2', 'k', 1, 'double',
+    'quant.cutoff', 'u', 1, 'double',
+    'min.cells.expr', 'y', 1, 'numeric',
+    'min.expr', 'g', 1, 'double',
+    'quant.min', 'q', 1, 'double',  
+    'lib.file', 'l', 1, 'character',
+    'help', 'h', 0, 'logical'
+), byrow=TRUE, ncol=4);
+opt = getopt(spec)
+
+usage <- function(spec){
+    cat(getopt(spec, command = 'var_genes_brennecke', usage=TRUE));
+    cat(sprintf(" -m meta.file\n\tInput file in rds-format, containing mapping statistics (output by the program get_meta).\n"))
+    cat(sprintf(" -c counts.file\n\tInput file in rds-format, containing raw read counts for all samples and features (output by the program get_expr).\n"))
+    cat(sprintf(" -e ercc.counts.file\n\tInput file in rds-format, containing raw read counts for all samples and ERCC spike-in features (output by the program get_expr).\n"))
+    cat(sprintf(" -o out.dir\n\tOutput directory where plots and data files are saved.\n"))
+    cat(sprintf(" -s strat.factor\n\tStratification factor, which will group the samples in some of the plots. Default: nostrat\n"))
+    cat(sprintf(" -b min.biol.cv2\n\tBiological coeffienct of variance (cv^2) null hypothesis. Default: 0.5^2\n"))
+    cat(sprintf(" -a alpha\n\tSignificance level for the hypothesis test. Default: 1e-10\n"))
+    cat(sprintf(" -t n.top\n\tNumber of top varying genes to highlight in plot. Default: 500\n"))
+    cat(sprintf(" -n n.ercc.min\n\tERCC filter: Minimum number of expressed ERCC transcripts, otherwise sample is filtered. Default: 2\n"))
+    cat(sprintf(" -j min.count\n\tERCC filter: Minimum expression level for a ERCC transcript to be deemed expressed (read counts). Default: 2\n"))
+    cat(sprintf(" -p min.prop\n\tERCC filter: Minimum proportion of expressed ERCC transcripts, otherwise sample will be filtered. Default: 0.5\n"))
+    cat(sprintf(" -k min.cv2\n\tERCC filter: Minimum squared coeffiecient of variance. Among ERCC transcripts that have higher cv^2 than min.cv2 the mean distribution is used to set a minimum mean cutoff, based on the quantile.cutoff (-u). Default: 0.3\n"))
+    cat(sprintf(" -u quant.cutoff\n\tERCC filter: Quantile cutoff of the mean expression distribution among the ERCC transcripts. This sets a minimum mean expression level. ERCC transcripts with lower mean expression are filtered out. Default: 0.9\n"))
+    cat(sprintf(" -y min.cells.expr\n\tReal transcripts (not spike-ins) are removed if expressed in less than min.cells.expr samples. Default: 3\n"))
+    cat(sprintf(" -g min.expr\n\tMinimum expression level for a gene to be deemed expressed. Default: 1\n"))
+    cat(sprintf(" -q quant.min\n\tQuantile of chi-square test-statistica where a line is plotted. Default: 0.025\n"))
+    cat(sprintf(" -l lib.file\n\tLibrary file with required R functions. Default: brennecke.lib.R residing in a subdir '../lib' relative to where this program was executed from.\n\n"))
+    q(status=1);
+}
+
+#Print usage if help flag set
+if(!is.null(opt[['help']])){
+  usage(spec)
+}
+
+#Error check that all required options were set
+if(is.null(opt[['meta.file']])){warning('Error: "m" is a required option'); usage(spec);}
+if(is.null(opt[['counts.file']])){warning('Error: "c" is a required option'); usage(spec);}
+if(is.null(opt[['ercc.counts.file']])){warning('Error: "e" is a required option'); usage(spec);}
+if(is.null(opt[['out.dir']])){warning('Error: "o" is a required option'); usage(spec);}
+
+#Set defaults for optional options
+if(is.null(opt[['strat.factor']])){opt[['strat.factor']] = 'nostrat';}
+if(is.null(opt[['min.biol.cv2']])){opt[['min.biol.cv2']] = 0.5^2;}
+if(is.null(opt[['alpha']])){opt[['alpha']] = 1e-10;}
+if(is.null(opt[['n.top']])){opt[['n.top']] = 500;}
+if(is.null(opt[['n.ercc.min']])){opt[['n.ercc.min']] = 2;}
+if(is.null(opt[['min.count']])){opt[['min.count']] = 2;}
+if(is.null(opt[['min.prop']])){opt[['min.prop']] = 0.5;}
+if(is.null(opt[['min.cv2']])){opt[['min.cv2']] = 0.3;}
+if(is.null(opt[['quant.cutoff']])){opt[['quant.cutoff']] = 0.9;}
+if(is.null(opt[['min.cells.expr']])){opt[['min.cells.expr']] = 3;}
+if(is.null(opt[['min.expr']])){opt[['min.expr']] = 1;}
+if(is.null(opt[['quant.min']])){opt[['quant.min']] = 0.025;}
+if(is.null(opt[['lib.file']])){opt[['lib.file']] = file.path(scriptPath, '../lib', 'brennecke.lib.R');}
+
+
+###
+#Source fcn lib
+###
+source(opt[['lib.file']], chdir = TRUE)
+
+
+###
+#Execute
+###
+var.genes.brennecke(opt[['counts.file']], opt[['ercc.counts.file']], opt[['meta.file']], opt[['out.dir']], opt)
+

@@ -1,0 +1,80 @@
+#!/usr/bin/env Rscript
+#sample_hclust -m meta.rds -r rpkm.rds -o sample.hclust.pdf -b 0
+#Plot hierarchical clustering tree
+
+
+###
+#Get opt
+###
+library('getopt')
+
+argv = commandArgs(trailingOnly = F)  
+scriptPath = dirname(sub("--file=", "", argv[grep("--file", argv)]))
+#source(file.path(scriptPath, '../lib/getopt.R')) #If one wants to avoid dependency of installed R package (getopt).
+argv = commandArgs(trailingOnly = T)
+
+spec = matrix(c(
+  'meta.file', 'm', 1, 'character',
+  'rpkm.file', 'r', 1, 'character',
+  'sample.hclust.pdf', 'o', 1, 'character',
+  'cor.meth', 'c', 1, 'character',
+  'n.boot', 'b', 1, 'numeric',
+  'strat.factor', 's', 1, 'character',
+  'ind.factor', 'i', 1, 'character',
+  'cex', 'x', 1, 'double',
+  'lib.dir', 'l', 1, 'character',
+  'help', 'h', 0, 'logical'
+), byrow=TRUE, ncol=4);
+opt = getopt(spec)
+
+usage <- function(spec){
+  cat(getopt(spec, command = 'sample_hclust', usage=TRUE));
+  cat(sprintf(" -m meta.file\n\tInput file in rds-format, containing mapping statistics (output by the program get_meta).\n"))
+  cat(sprintf(" -r rpkm.file\n\tInput file in rds-format, containing normalized read counts for all samples and features (output by the program get_expr).\n"))
+  cat(sprintf(" -o sample.hclust.pdf\n\tOutput file to which the plot is printed. It is required to contain the string 'cor'. Default: sample.hclust.pdf\n"))
+  cat(sprintf(" -c cor.meth\n\tCorrelation method, see the fcn \"cor\". Default: spearman\n"))
+  cat(sprintf(" -b n.boot\n\tNumber of bootstrap iterations. Default: 0\n"))
+  cat(sprintf(" -s strat.factor\n\tStratification factor, which will group the samples in some of the plots. Default: nostrat\n"))
+  cat(sprintf(" -i ind.factor\n\tIndividual factor, a second factor to group the samples in the sample label plot. Default: ind\n"))
+  cat(sprintf(" -x cex\n\tText magnification factor. Default: 0.5\n"))
+  cat(sprintf(" -l lib.dir\n\tLibrary directory with required R functions. Default: A subdir '../lib' relative to where this program was executed from.\n\n"))
+  q(status=1);
+}
+
+#Print usage if help flag set
+if(!is.null(opt[['help']])){
+  usage(spec)
+}
+
+#Error check that all required options were set
+if(is.null(opt[['meta.file']])){warning('Error: "m" is a required option'); usage(spec);}
+if(is.null(opt[['rpkm.file']])){warning('Error: "r" is a required option'); usage(spec);}
+
+#Set defaults for optional options
+if(is.null(opt[['sample.hclust.pdf']])){opt[['sample.hclust.pdf']] = 'sample.hclust.pdf';}
+if(is.null(opt[['cor.meth']])){opt[['cor.meth']] = 'spearman';}
+if(is.null(opt[['n.boot']])){opt[['n.boot']] = 0;}
+if(is.null(opt[['strat.factor']])){opt[['strat.factor']] = 'nostrat';}
+if(is.null(opt[['ind.factor']])){opt[['ind.factor']] = 'ind';}
+if(is.null(opt[['cex']])){opt[['cex']] = 0.5;}
+if(is.null(opt[['lib.dir']])){opt[['lib.dir']] = file.path(scriptPath, '../lib');}
+
+#Error check options
+if(length(grep('hclust', opt[['sample.hclust.pdf']])) == 0){warning('Error: File-name of "-o" option needs to contain the string "hclust".'); usage(spec);}
+
+
+###
+#Source fcn lib
+###
+source(file.path(opt[['lib.dir']], 'main.lib.R'), chdir = TRUE)
+source(file.path(opt[['lib.dir']], 'basic.lib.R'), chdir = TRUE)
+source(file.path(opt[['lib.dir']], 'expr.lib.R'), chdir = TRUE)
+source(file.path(opt[['lib.dir']], 'pvclust.R'), chdir = TRUE)
+source(file.path(opt[['lib.dir']], 'pvclust-internal.R'), chdir = TRUE)
+#library('pvclust'): No support of custom distance function (e.g. Spearman)
+
+
+###
+#Execute
+###
+sample.hclust(opt[['meta.file']], opt[['rpkm.file']], opt[['sample.hclust.pdf']], opt[['cor.meth']], opt[['n.boot']], opt[['strat.factor']], opt[['ind.factor']], opt[['cex']])
