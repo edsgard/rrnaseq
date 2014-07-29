@@ -15,8 +15,9 @@ Currently the starting input is a tab-separated file with RPKM values and raw re
 		biocLite(pkgs)
 
 2. Add the directory with binaries to your shell path (to for example .profile on OS X or .bashrc in Linux):
+```Shell
 export PATH="/home/user/prg/rrnaseq/bin:$PATH"
-
+```
 
 
 ###HOW TO RUN

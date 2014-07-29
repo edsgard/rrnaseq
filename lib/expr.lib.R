@@ -171,6 +171,7 @@ read.rpkm <- function(rpkm.files){
         
         header = read.table(j.file, sep = '\t', stringsAsFactors = FALSE, nrows = 1, comment.char = '')
         header = header[2:length(header)]
+        header = gsub('_unique.bam', '', header)
         data.df = read.table(j.file, sep = '\t', header = FALSE, stringsAsFactors = FALSE)
         
         gene.id = data.df[, 1]
