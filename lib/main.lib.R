@@ -5,15 +5,24 @@ get.meta <- function(mapstats.tab.file, meta.file, meta.tab.file){
     #####
     #Read mapstats
     #####
-    mapstats = read.table(mapstats.tab.file, sep = '\t', header = TRUE, stringsAsFactors = FALSE)
+    mapstats = read.table(mapstats.tab.file, sep = '\t', header = TRUE, stringsAsFactors = FALSE, fill = TRUE)
     colnames(mapstats) = gsub('\\.*$', '', colnames(mapstats))
     
     colnames(mapstats) = sub('Reads', 'n.reads', colnames(mapstats))
     colnames(mapstats) = sub('Readlength', 'read.len', colnames(mapstats))
     colnames(mapstats) = sub('Uniqely.mapping', 'uniq.mapped.prc', colnames(mapstats))
     colnames(mapstats) = sub('Unmapped.reads', 'unmapped.prc', colnames(mapstats))
-    colnames(mapstats) = sub('Multimapping.reads', 'multimapping.prc', colnames(mapstats))
+    colnames(mapstats) = sub('Multimapping.reads', 'multimapping.prc', colnames(mapstats))    
     colnames(mapstats) = tolower(colnames(mapstats))
+
+    #set rownames to sample
+    nodata.ind = grep('no data for', mapstats[, 'n.reads'])
+    if(length(nodata.ind) != 0){
+        nodata.samples = gsub('no data for ', '', mapstats[nodata.ind, 'n.reads'])
+        mapstats[nodata.ind, 'sample'] = nodata.samples
+        mapstats[nodata.ind, 'n.reads'] = NA
+        mapstats[, 'n.reads'] = as.integer(mapstats[, 'n.reads'])
+    }
     rownames(mapstats) = mapstats[, 'sample']
         
     meta.mat = mapstats
@@ -50,12 +59,17 @@ get.meta <- function(mapstats.tab.file, meta.file, meta.tab.file){
 
 }
 
-get.expr <- function(rpkm.files, rpkm.rsync.out.dir, rpkm.cloud.out.dir, meta.file = NA){
+get.expr <- function(rpkm.files, rpkm.rsync.out.dir, rpkm.cloud.out.dir, meta.file = NA, meta.sample.col = 'sample', rpkm.files.listed = FALSE){
 
 
     #Get rpkmforgenes filenames
     rpkm.files = strsplit(rpkm.files, ',')[[1]]
 
+    #If rpkm.files.listed set to TRUE, then the rpkm.files is a file containing a list of rpkm files to be read
+    if(rpkm.files.listed){
+        rpkm.files = read.table(rpkm.files, stringsAsFactors = FALSE)[, 1]
+    }
+    
     #Read RPKM (and count) files
     rpkm.counts.list = read.rpkm(rpkm.files)
 
@@ -64,12 +78,12 @@ get.expr <- function(rpkm.files, rpkm.rsync.out.dir, rpkm.cloud.out.dir, meta.fi
         
         meta.mat = readRDS(meta.file)    
         file.samples = colnames(rpkm.counts.list[['rpkm']])
-        sample.subset = intersect(file.samples, meta.mat[, 'sample'])
-        length(sample.subset) #38. OK.
+        sample.subset = intersect(file.samples, meta.mat[, meta.sample.col])
+        print(length(sample.subset)) #
         rpkm.counts.list = lapply(rpkm.counts.list, function(jdata, sample.subset){jdata[, sample.subset]}, sample.subset = sample.subset)
 
         #Change names: sample -> id    
-        rpkm.counts.list = lapply(rpkm.counts.list, function(jdata, meta.mat){rownames(meta.mat) = meta.mat[, 'sample']; colnames(jdata) = meta.mat[colnames(jdata), 'id']; return(jdata);}, meta.mat = meta.mat)
+        rpkm.counts.list = lapply(rpkm.counts.list, function(jdata, meta.mat){rownames(meta.mat) = meta.mat[, meta.sample.col]; colnames(jdata) = meta.mat[colnames(jdata), 'id']; return(jdata);}, meta.mat = meta.mat)
     }
     
     #Check
@@ -99,9 +113,14 @@ mapstats <- function(meta.file, counts.file, res.dir, strat.factor = 'nostrat', 
 
     library('RColorBrewer')
 
+    #Hardcoded params
+    pdf.w = 20
+    pdf.h = 20
+    qc.meta.tab.file = paste(sub('\\.rds$', '', qc.meta.file), 'tab', sep = '.')
+    
     #Read data
     meta.mat = readRDS(meta.file)
-    nrow(meta.mat) #38
+    print(dim(meta.mat)) #
 
     #Colormaps
     strat.factor.color = paste(strat.factor, 'color', sep = '.')
@@ -131,7 +150,7 @@ mapstats <- function(meta.file, counts.file, res.dir, strat.factor = 'nostrat', 
         
 
         #barplot    
-        pdf(file = file.path(res.dir, 'n.reads.bar.pdf'))
+        pdf(file = file.path(res.dir, 'n.reads.bar.pdf'), width = pdf.w, height = pdf.h)
         bp = barplot(meta.mat[, 'n.reads'], axes = FALSE, axisnames = FALSE, ylab = '# of reads', main = '# of reads', col = meta.mat[, strat.factor.color], border = NA)
         axis(2)
         axis(1, at = bp, labels = meta.mat[, 'id'], cex.axis = cex, las = 2)
@@ -144,7 +163,7 @@ mapstats <- function(meta.file, counts.file, res.dir, strat.factor = 'nostrat', 
         ###
         #Percent mapped reads
         ###
-        pdf(file = file.path(res.dir, 'percent.mapped.bar.pdf'))
+        pdf(file = file.path(res.dir, 'percent.mapped.bar.pdf'), width = pdf.w, height = pdf.h)
         bp = barplot(as.matrix(t(meta.mat[, c('uniq.mapped.prc', 'multimapping.prc', 'unmapped.prc')])), beside=FALSE, axes = FALSE, axisnames = FALSE, ylab = '%', col = c('green', 'blue', 'red'), legend.text = c('Uniq', 'Multi', 'Unmapped'), args.legend = list(x = 37, y = 115), border = NA)
         axis(2, at = seq(0, 100, 10), labels = seq(0, 100, 10))
         axis(1, at = bp, labels = meta.mat[, 'id'], cex.axis = cex, las = 2)
@@ -164,7 +183,7 @@ mapstats <- function(meta.file, counts.file, res.dir, strat.factor = 'nostrat', 
     
         #barplot
         nreads.cutoff = 1e6
-        pdf(file = file.path(res.dir, 'n.reads.uniq.mapped.bar.pdf'))
+        pdf(file = file.path(res.dir, 'n.reads.uniq.mapped.bar.pdf'), width = pdf.w, height = pdf.h)
         bp = barplot(meta.mat[, 'n.reads.uniq.mapped'], axes = FALSE, axisnames = FALSE, ylab = '# of reads', main = '# of reads', col = meta.mat[, strat.factor.color], border = NA)
         axis(2)
         axis(1, at = bp, labels = meta.mat[, 'id'], cex.axis = cex, las = 2)
@@ -209,7 +228,7 @@ mapstats <- function(meta.file, counts.file, res.dir, strat.factor = 'nostrat', 
         refseq.counts.sample = colSums(refseq.counts[, meta.mat[, 'id']])
 
         #barplot
-        pdf(file = file.path(res.dir, 'n.reads.annotmapped.barplot.pdf'))
+        pdf(file = file.path(res.dir, 'n.reads.annotmapped.barplot.pdf'), width = pdf.w, height = pdf.h)
         bp = barplot(refseq.counts.sample, axes = FALSE, axisnames = FALSE, ylab = '# of reads', main = '', col = meta.mat[, strat.factor.color], border = NA)
         axis(2)
         axis(1, at = bp, labels = meta.mat[, 'id'], cex.axis = cex, las = 2)
@@ -233,7 +252,7 @@ mapstats <- function(meta.file, counts.file, res.dir, strat.factor = 'nostrat', 
         frac.refseq = refseq.counts.sample / n.reads
     
         #barplot
-        pdf(file = file.path(res.dir, 'fraction.annotmapped.barplot.pdf'))
+        pdf(file = file.path(res.dir, 'fraction.annotmapped.barplot.pdf'), width = pdf.w, height = pdf.h)
         bp = barplot(frac.refseq, axes = FALSE, axisnames = FALSE, ylab = 'Fraction of uniquely mapped reads mapping to annotation', main = '', col = meta.mat[, strat.factor.color], border = NA)
         axis(2)
         axis(1, at = bp, labels = meta.mat[, 'id'], cex.axis = cex, las = 2)
@@ -285,7 +304,7 @@ mapstats <- function(meta.file, counts.file, res.dir, strat.factor = 'nostrat', 
         
         #Dump
         saveRDS(qc.meta.mat, file = qc.meta.file)
-
+        write.table(qc.meta.mat, quote = F, col.names = NA, sep = '\t', file = qc.meta.tab.file)
     }
 }
 
@@ -296,8 +315,8 @@ sample.expr.dhist <- function(meta.file, rpkm.file, sampledist.pdf, strat.factor
     #Load data
     meta.mat = readRDS(meta.file)
     rpkm = readRDS(rpkm.file)
-    dim(rpkm) #Refseq: 24249 x n.samples
-    dim(meta.mat) #n.samples x n.cols
+    #print(dim(rpkm)) #Refseq: 24249 x n.samples
+    #print(dim(meta.mat)) #n.samples x n.cols
 
     #Create output dir    
     dir.create(dirname(sampledist.pdf), showWarnings = FALSE, recursive = TRUE)
@@ -359,7 +378,7 @@ sample2ngenes.expr <- function(meta.file, rpkm.file, sample2ngenes.pdf, qc.meta.
 
     #Params
     rpkm.cutoff = 10^(log.rpkm.cutoff)
-
+    qc.meta.tab.file = paste(sub('\\.rds$', '', qc.meta.file), 'tab', sep = '.')
     
     ###
     #Load data
@@ -399,7 +418,7 @@ sample2ngenes.expr <- function(meta.file, rpkm.file, sample2ngenes.pdf, qc.meta.
         fail.ind = which(n.genes.expr < n.genes.cutoff)
         fail.samples = names(fail.ind)    
         length(fail.samples) #
-        cat(fail.samples)
+        #cat(fail.samples)
 
         #Get qc.meta.mat, create new data-structure if file doesn't exist
         qc.meta.mat = get.qc.df(qc.meta.file, meta.mat)        
@@ -412,11 +431,12 @@ sample2ngenes.expr <- function(meta.file, rpkm.file, sample2ngenes.pdf, qc.meta.
 
         #Dump
         saveRDS(qc.meta.mat, file = qc.meta.file)
+        write.table(qc.meta.mat, quote = F, col.names = NA, sep = '\t', file = qc.meta.tab.file)
     }
     
 }
 
-sampledist.heatmap <- function(meta.file, rpkm.file, sample.heatmap.pdf, strat.factor, cor.meth, cex.sample, ...){
+sampledist.heatmap <- function(meta.file, rpkm.file, sample.heatmap.pdf, strat.factor, cor.meth, cex.sample, cor.res.list = NA, ...){
 
     library('RColorBrewer')
 
@@ -435,24 +455,31 @@ sampledist.heatmap <- function(meta.file, rpkm.file, sample.heatmap.pdf, strat.f
     #######################
     #Sample-distance heatmap
     #######################
-    
-    #Pairwise dist btw samples
-    cor.res = cor(rpkm, use="pairwise.complete.obs", method = cor.meth)
-    
-    #get dist and hclust 
-    col.dist.mat = as.dist(((cor.res * -1) + 1) / 2)
-    col.clust = hclust(col.dist.mat)    
 
+    if(is.na(cor.res.list)){
+        #Pairwise dist btw samples
+        cor.res = cor(rpkm, use="pairwise.complete.obs", method = cor.meth)
+    
+        #get dist and hclust 
+        col.dist.mat = as.dist(((cor.res * -1) + 1) / 2)
+        col.clust = hclust(col.dist.mat)    
+    }else{
+        cor.res = cor.res.list[['cor.res']]
+        col.clust = cor.res.list[['col.clust']]
+    }
+    
     #Plot
     heatmap.pdf = sub('heatmap', paste('heatmap.', cor.meth, sep = ''), sample.heatmap.pdf)
     pdf(file = heatmap.pdf, width = 10, height = 10, ...)
     plot.heatmap.sample(cor.res, col.clust, meta.mat, strat.factor, cexRow = cex.sample, cexCol = cex.sample)
     dev.off()
-    
+
+
+    return(list(cor.res = cor.res, col.clust = col.clust))
 }
 
 
-sampledist.boxplot <- function(meta.file, rpkm.file, sample.cor.pdf, qc.meta.file, cor.meth, max.cor.cutoff, cex.axis, filter.bool, plot.bool){
+sampledist.boxplot <- function(meta.file, rpkm.file, sample.cor.pdf, qc.meta.file, cor.meth, max.cor.cutoff, cex.axis, filter.bool, plot.bool, cor.res.list = NA){
 
 
     library('RColorBrewer')
@@ -460,6 +487,7 @@ sampledist.boxplot <- function(meta.file, rpkm.file, sample.cor.pdf, qc.meta.fil
     ###
     #Params
     ###
+    qc.meta.tab.file = paste(sub('\\.rds$', '', qc.meta.file), 'tab', sep = '.')
     cor.boxplot.pdf = sub('cor', paste('cor', cor.meth, 'boxplot', sep = '.'), sample.cor.pdf)
     cor.max.dens.pdf = sub('cor', paste('cor', cor.meth, 'max.dens', sep = '.'), sample.cor.pdf)
 
@@ -478,9 +506,14 @@ sampledist.boxplot <- function(meta.file, rpkm.file, sample.cor.pdf, qc.meta.fil
     ######################
     #Plot boxplot of pairwise correlations for each sample
 
-    #Pairwise dist btw samples
-    cor.res = cor(rpkm, use="pairwise.complete.obs", method = cor.meth)
+    if(is.na(cor.res.list)){
+        #Pairwise dist btw samples
+        cor.res = cor(rpkm, use="pairwise.complete.obs", method = cor.meth)
 
+    }else{
+        cor.res = cor.res.list[['cor.res']]
+    }
+    
     #Max correlation to another sample
     cor.res.noone = cor.res
     cor.res.noone[which(cor.res.noone > 0.99)] = NA
@@ -527,11 +560,13 @@ sampledist.boxplot <- function(meta.file, rpkm.file, sample.cor.pdf, qc.meta.fil
 
         #Dump
         saveRDS(qc.meta.mat, file = qc.meta.file)
+        write.table(qc.meta.mat, quote = F, col.names = NA, sep = '\t', file = qc.meta.tab.file)
     }
-    
+
+    return(list(cor.res = cor.res))
 }
 
-sample.hclust <- function(meta.file, rpkm.file, sample.hclust.pdf, cor.meth, n.boot, strat.factor, ind.factor, cex){
+sample.hclust <- function(meta.file, rpkm.file, sample.hclust.pdf, cor.meth, n.boot, strat.factor, ind.factor, cex, cor.res.list = NA){
 
 
     library('RColorBrewer')
@@ -566,13 +601,21 @@ sample.hclust <- function(meta.file, rpkm.file, sample.hclust.pdf, cor.meth, n.b
         #########################
         #colored labels in dendrogram: plotColoredClusters {ClassDiscovery} (#not available for R>=3. also e.g. (PerturbationClusterTest)); dendextend; dendrapply{graphics}    
 
-        #Pairwise dist btw samples
-        cor.res = cor(rpkm, use="pairwise.complete.obs", method = cor.meth)
+
+        if(is.na(cor.res.list)){
+            #Pairwise dist btw samples
+            cor.res = cor(rpkm, use="pairwise.complete.obs", method = cor.meth)
     
-        #get dist and hclust 
-        col.dist.mat = as.dist(((cor.res * -1) + 1) / 2)
-        col.clust = hclust(col.dist.mat)    
-    
+            #get dist and hclust 
+            col.dist.mat = as.dist(((cor.res * -1) + 1) / 2)
+            col.clust = hclust(col.dist.mat)
+            
+            cor.res.list = list(cor.res = cor.res, col.clust = col.clust)
+        }else{
+            cor.res = cor.res.list[['cor.res']]
+            col.clust = cor.res.list[['col.clust']]
+        }
+        
         #Colormap
         d = dendrapply(as.dendrogram(col.clust), labelCol, meta.mat = meta.mat, strat.factor = strat.factor, cex = cex)
 
@@ -600,8 +643,9 @@ sample.hclust <- function(meta.file, rpkm.file, sample.hclust.pdf, cor.meth, n.b
         
         #cluster
         pvclust.res = pvclust(rpkm, method.dist = cor.dist.fcn, nboot = n.boot)
-  
-        #dump  
+        
+        #dump        
+        cor.res.list = list(pvclust.res = pvclust.res)
         #saveRDS(pvclust.res, file = '/Volumes/Data/cloud/gdrive/work/rspd/code/my/rrnaseq/test/rqc/data/tmp.rds')
 
 
@@ -611,7 +655,8 @@ sample.hclust <- function(meta.file, rpkm.file, sample.hclust.pdf, cor.meth, n.b
         dev.off()
         #pvrect(pvclust.res, alpha = 0.95)
     }
-    
+
+    return(cor.res.list)
 }
 
 pca <- function(meta.file, rpkm.file, pca.pdf, plot.comp, log.fcn, pc.cutoff, filter.bool, gt.bool, qc.meta.file, strat.factor, point.cex){
@@ -622,6 +667,7 @@ pca <- function(meta.file, rpkm.file, pca.pdf, plot.comp, log.fcn, pc.cutoff, fi
     #Params
     ###
     pca.evar.pdf = sub('pca\\.', 'pca.evar.', pca.pdf)
+    qc.meta.tab.file = paste(sub('\\.rds$', '', qc.meta.file), 'tab', sep = '.')
     strat.factor.col = paste(strat.factor, 'color', sep = '.')
 
     
@@ -691,7 +737,7 @@ pca <- function(meta.file, rpkm.file, pca.pdf, plot.comp, log.fcn, pc.cutoff, fi
         #Params
         pc.x = paste('PC', plot.comp[1], sep = '')
         pc.y = paste('PC', plot.comp[2], sep = '')
-        pca.pdf = sub('pca', paste('pca.', pc.x, '_', pc.y, sep = ''), pca.pdf)
+        pca.pdf = sub('pca\\.', paste('pca.', pc.x, '_', pc.y, '.', sep = ''), pca.pdf)
         
         #Colormaps
         meta.mat = meta.mat[rownames(pca.basis), ]
@@ -719,7 +765,7 @@ pca <- function(meta.file, rpkm.file, pca.pdf, plot.comp, log.fcn, pc.cutoff, fi
 
         #Params
         pc = paste('PC', plot.comp, sep = '')
-        pca.pdf = sub('pca', paste('pca', pc, 'dhist', sep = '.'), pca.pdf)
+        pca.pdf = sub('pca\\.', paste('pca', pc, 'dhist.', sep = '.'), pca.pdf)
 
         #plot
         pdf(file = pca.pdf)
@@ -753,6 +799,7 @@ pca <- function(meta.file, rpkm.file, pca.pdf, plot.comp, log.fcn, pc.cutoff, fi
 
             #Dump
             saveRDS(qc.meta.mat, file = qc.meta.file)
+            write.table(qc.meta.mat, quote = F, col.names = NA, sep = '\t', file = qc.meta.tab.file)
         }
     }
     

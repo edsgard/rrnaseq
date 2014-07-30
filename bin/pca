@@ -84,7 +84,7 @@ if(opt[['log.transform']] != '0'){
 }
 
 #Error check options
-if(length(grep('pca', opt[['pca.pdf']])) == 0){warning('Error: File-name of "-o" option needs to contain the string "pca".'); usage(spec);}
+if(length(grep('pca\\.', opt[['pca.pdf']])) == 0){warning('Error: File-name of "-o" option needs to contain the string "pca.".'); usage(spec);}
 
 
 ###

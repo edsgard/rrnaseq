@@ -113,8 +113,15 @@ gene2nsamples <- function(rpkm, meta.mat, strat.factor, rpkm.cutoff){
 
 plot.sample.expr.dist <- function(expr.mat, meta.mat, strat.factor){
 
+    few.datapoints.samples = colnames(expr.mat)[which(apply(expr.mat, 2, function(x){x = setdiff(x, c(Inf, -Inf)); length(unique(x))}) < 2)]
+    expr.mat = expr.mat[, setdiff(colnames(expr.mat), few.datapoints.samples)]
+    if(length(few.datapoints.samples) >0){
+        warning(sprintf('There were %i columns with less than two datapoints (after Inf, -Inf removal). These columns were excluded.', length(few.datapoints.samples)))
+    }
+    
     #Get dists
     density.list = apply(expr.mat, 2, density)
+
     
     #Plot
     strat.factor.col = paste(strat.factor, '.color', sep = '')

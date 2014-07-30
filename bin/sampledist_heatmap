@@ -19,6 +19,7 @@ spec = matrix(c(
   'sample.heatmap.pdf', 'o', 1, 'character',
   'strat.factor', 's', 1, 'character',
   'cor.meth', 'c', 1, 'character',
+  'cor.res.file', 'e', 1, 'character',
   'cex.sample', 'x', 1, 'double',
   'lib.dir', 'l', 1, 'character',
   'help', 'h', 0, 'logical'
@@ -32,6 +33,7 @@ usage <- function(spec){
   cat(sprintf(" -o sample.heatmap.pdf\n\tOutput file to which the plot is printed. It is required to contain the string 'heatmap.'. Default: sample.heatmap.pdf\n"))
   cat(sprintf(" -s strat.factor\n\tStratification factor, which will group the samples in some of the plots. Default: nostrat\n"))
   cat(sprintf(" -c cor.meth\n\tCorrelation method, see the fcn \"cor\". Default: spearman\n"))
+  cat(sprintf(" -e cor.res.file\n\tFile in rds-format with a list containing correlation result data-structures. If the file already exists the correlation results are read from it instead of being recalculated. Default: NA\n"))
   cat(sprintf(" -x cex.sample\n\tText magnification factor. Default: 0.7\n"))
   cat(sprintf(" -l lib.dir\n\tLibrary directory with required R functions. Default: A subdir residing at '../lib' relative to where this program was executed from.\n\n"))
   q(status=1);
@@ -52,6 +54,15 @@ if(is.null(opt[['strat.factor']])){opt[['strat.factor']] = 'nostrat';}
 if(is.null(opt[['cor.meth']])){opt[['cor.meth']] = 'spearman';}
 if(is.null(opt[['cex.sample']])){opt[['cex.sample']] = 0.7;}
 if(is.null(opt[['lib.dir']])){opt[['lib.dir']] = file.path(scriptPath, '../lib');}
+if(is.null(opt[['cor.res.file']])){
+    cor.res.list = NA    
+}else{
+    if(file.exists(opt[['cor.res.file']])){
+        cor.res.list = readRDS(opt[['cor.res.file']])
+    }else{
+        cor.res.list = NA
+    }
+}
 
 #Error check options
 if(length(grep('heatmap\\.', opt[['sample.heatmap.pdf']])) == 0){warning('Error: File-name of "-o" option needs to contain the string "heatmap.".'); usage(spec);}
@@ -67,4 +78,14 @@ source(file.path(opt[['lib.dir']], 'main.lib.R'), chdir = TRUE)
 ###
 #Execute
 ###
-sampledist.heatmap(opt[['meta.file']], opt[['rpkm.file']], opt[['sample.heatmap.pdf']], opt[['strat.factor']], opt[['cor.meth']], opt[['cex.sample']])
+cor.res.list = sampledist.heatmap(opt[['meta.file']], opt[['rpkm.file']], opt[['sample.heatmap.pdf']], opt[['strat.factor']], opt[['cor.meth']], opt[['cex.sample']], cor.res.list)
+
+
+###
+#Dump
+###
+if(!is.null(opt[['cor.res.file']])){
+    if(!file.exists(opt[['cor.res.file']])){
+        saveRDS(cor.res.list, file = opt[['cor.res.file']])
+    }
+}
