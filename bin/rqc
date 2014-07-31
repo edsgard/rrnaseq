@@ -104,6 +104,8 @@ echo sample_hclust -m meta.rds -r rpkm.rds -o ${pdfdir}/sampledist/sample.hclust
 
 printf '\n#PCA\n' >>rqc.sh
 echo pca -m meta.rds -r rpkm.rds -o ${pdfdir}/pca/pca.pdf -c $pc_comp >>rqc.sh
+echo pca -m meta.rds -r rpkm.rds -o ${pdfdir}/pca/pca.pdf -c 1,2 >>rqc.sh
+echo pca -m meta.rds -r rpkm.rds -o ${pdfdir}/pca/pca.pdf -c 1 -f -q qc.rds >>rqc.sh
 
 printf '\n#Scatter plot\n' >>rqc.sh
 echo scatter -d rpkm.rds -o ${pdfdir}/scatter/sample.scatter.pdf -s $scatter_samples >>rqc.sh

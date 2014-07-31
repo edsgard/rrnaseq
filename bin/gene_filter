@@ -30,6 +30,7 @@ opt = getopt(spec)
 
 usage <- function(spec){
   cat(getopt(spec, command = 'gene_filter', usage=TRUE));
+  cat(sprintf("Filter genes based on the number of samples they are expressed in and plot histogram of it\n"))
   cat(sprintf(" -m meta.file\n\tInput file in rds-format, containing sample meta-information (output by the program get_meta).\n"))
   cat(sprintf(" -r rpkm.file\n\tInput file in rds-format, containing normalized read counts for all samples and features (output by the program get_expr).\n"))
   cat(sprintf(" -o rpkm.postqc.file\n\tOutput file in rds-format, containing normalized read counts, where features have been filtered based on the number of samples they are expressed in.\n"))

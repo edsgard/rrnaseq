@@ -20,7 +20,7 @@ spec = matrix(c(
   'plot.comp', 'c', 1, 'character',
   'log.transform', 't', 1, 'character',
   'pc.cutoff', 'u', 1, 'double',
-  'filter.bool', 'f', 1, 'logical',
+  'filter.bool', 'f', 0, 'logical',
   'greater.than', 'g', 1, 'logical',
   'qc.meta.file', 'q', 1, 'character',
   'strat.factor', 's', 1, 'character',
@@ -32,6 +32,7 @@ opt = getopt(spec)
 
 usage <- function(spec){
   cat(getopt(spec, command = 'pca', usage=TRUE));
+  cat(sprintf("PCA plots using prcomp to get the pca basis. Can also set filter based on a single PC.\n"))
   cat(sprintf(" -m meta.file\n\tInput file in rds-format, containing mapping statistics (output by the program get_meta).\n"))
   cat(sprintf(" -r rpkm.file\n\tInput file in rds-format, containing normalized read counts for all samples and features (output by the program get_expr).\n"))
   cat(sprintf(" -o pca.pdf\n\tOutput file to which the plot is printed. It is required to contain the string 'pca'. Default: pca.pdf\n"))

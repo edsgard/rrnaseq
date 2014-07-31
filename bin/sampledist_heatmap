@@ -28,6 +28,7 @@ opt = getopt(spec)
 
 usage <- function(spec){
   cat(getopt(spec, command = 'sampledist_heatmap', usage=TRUE));
+  cat(sprintf("Sample distance heatmap\n"))
   cat(sprintf(" -m meta.file\n\tInput file in rds-format, containing mapping statistics (output by the program get_meta).\n"))
   cat(sprintf(" -r rpkm.file\n\tInput file in rds-format, containing normalized read counts for all samples and features (output by the program get_expr).\n"))
   cat(sprintf(" -o sample.heatmap.pdf\n\tOutput file to which the plot is printed. It is required to contain the string 'heatmap.'. Default: sample.heatmap.pdf\n"))

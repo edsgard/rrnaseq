@@ -1,6 +1,6 @@
 #!/usr/bin/env Rscript
 #sample2ngenes_expr -m meta.rds -r rpkm.rds -o sample2ngenes.dens.pdf -q qc.meta.rds
-#Filter all genes not passing a filter of expr in n samples in any stratum
+#Plot and set filter of number of expressed genes per sample
 
 
 
@@ -30,6 +30,7 @@ opt = getopt(spec)
 
 usage <- function(spec){
   cat(getopt(spec, command = 'sample2ngenes_expr', usage=TRUE));
+  cat(sprintf("Plot and set filter of number of expressed genes per sample\n"))
   cat(sprintf(" -m meta.file\n\tInput file in rds-format, containing mapping statistics (output by the program get_meta).\n"))
   cat(sprintf(" -r rpkm.file\n\tInput file in rds-format, containing normalized read counts for all samples and features (output by the program get_expr).\n"))
   cat(sprintf(" -o sample2ngenes.pdf\n\tOutput file to which the plot is printed. Default: sample2ngenes.dens.pdf\n"))

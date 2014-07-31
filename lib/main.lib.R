@@ -457,12 +457,20 @@ sampledist.heatmap <- function(meta.file, rpkm.file, sample.heatmap.pdf, strat.f
     #######################
 
     if(is.na(cor.res.list)){
+
+        #rm cols with constant variance
+        const.cols = which(apply(rpkm, 2, function(x){var(x) == 0}))
+        if(length(const.cols) != 0){
+            warning('There were constant columns. These were removed.')
+            rpkm = rpkm[, setdiff(1:ncol(rpkm), const.cols)]
+        }
+        
         #Pairwise dist btw samples
         cor.res = cor(rpkm, use="pairwise.complete.obs", method = cor.meth)
     
         #get dist and hclust 
         col.dist.mat = as.dist(((cor.res * -1) + 1) / 2)
-        col.clust = hclust(col.dist.mat)    
+        col.clust = hclust(col.dist.mat)
     }else{
         cor.res = cor.res.list[['cor.res']]
         col.clust = cor.res.list[['col.clust']]
@@ -507,6 +515,14 @@ sampledist.boxplot <- function(meta.file, rpkm.file, sample.cor.pdf, qc.meta.fil
     #Plot boxplot of pairwise correlations for each sample
 
     if(is.na(cor.res.list)){
+
+        #rm cols with constant variance
+        const.cols = which(apply(rpkm, 2, function(x){var(x) == 0}))
+        if(length(const.cols) != 0){
+            warning('There were constant columns. These were removed.')
+            rpkm = rpkm[, setdiff(1:ncol(rpkm), const.cols)]
+        }
+
         #Pairwise dist btw samples
         cor.res = cor(rpkm, use="pairwise.complete.obs", method = cor.meth)
 
@@ -603,6 +619,14 @@ sample.hclust <- function(meta.file, rpkm.file, sample.hclust.pdf, cor.meth, n.b
 
 
         if(is.na(cor.res.list)){
+            
+            #rm cols with constant variance
+            const.cols = which(apply(rpkm, 2, function(x){var(x) == 0}))
+            if(length(const.cols) != 0){
+                warning('There were constant columns. These were removed.')
+                rpkm = rpkm[, setdiff(1:ncol(rpkm), const.cols)]
+            }
+
             #Pairwise dist btw samples
             cor.res = cor(rpkm, use="pairwise.complete.obs", method = cor.meth)
     
@@ -639,6 +663,13 @@ sample.hclust <- function(meta.file, rpkm.file, sample.hclust.pdf, cor.meth, n.b
 
         if(cor.meth == 'spearman'){
             cor.dist.fcn = spear.cor.col.dist
+        }
+
+        #rm cols with constant variance
+        const.cols = which(apply(rpkm, 2, function(x){var(x) == 0}))
+        if(length(const.cols) != 0){
+            warning('There were constant columns. These were removed.')
+            rpkm = rpkm[, setdiff(1:ncol(rpkm), const.cols)]
         }
         
         #cluster
@@ -785,7 +816,7 @@ pca <- function(meta.file, rpkm.file, pca.pdf, plot.comp, log.fcn, pc.cutoff, fi
             }else{
                 pc.fail.samples = rownames(pca.basis)[which(pca.basis[, pc] < pc.cutoff)]
             }
-            cat(pc.fail.samples)
+            #cat(pc.fail.samples)
             length(pc.fail.samples)            
             
             #Get qc.meta.mat, create new data-structure if file doesn't exist

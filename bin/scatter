@@ -25,6 +25,7 @@ opt = getopt(spec)
 
 usage <- function(spec){
   cat(getopt(spec, command = 'scatter', usage=TRUE));
+  cat(sprintf("Smoothed scatter plot\n"))
   cat(sprintf(" -d data.file\n\tInput file in rds-format, containing a (n x m) matrix with data (for example, rpkm.rds, output by the program get_expr).\n"))
   cat(sprintf(" -o scatter.pdf\n\tOutput directory.\n"))
   cat(sprintf(" -s samples\n\tA comma-separated list of samples to plot. No spaces allowed. The list can contain either numbers specifying the columns, or actual column names.\n"))

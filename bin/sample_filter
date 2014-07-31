@@ -25,6 +25,7 @@ opt = getopt(spec)
 
 usage <- function(spec){
   cat(getopt(spec, command = 'sample_filter', usage=TRUE));
+  cat(sprintf("Filter samples based on qc-measures\n"))
   cat(sprintf(" -d data.file\n\tInput file in rds-format, containing data to be filtered (typically, either rpkm.rds or counts.rds).\n"))
   cat(sprintf(" -q qc.meta.file\n\tInput file in rds-format in which qc-failed samples are stored.\n"))
   cat(sprintf(" -o out.file\n\tOutput file where the qc-filtered data.file is saved.\n"))

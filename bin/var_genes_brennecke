@@ -38,6 +38,7 @@ opt = getopt(spec)
 
 usage <- function(spec){
     cat(getopt(spec, command = 'var_genes_brennecke', usage=TRUE));
+    cat(sprintf("Find genes with higher variation than the technical variation\n"))
     cat(sprintf(" -m meta.file\n\tInput file in rds-format, containing mapping statistics (output by the program get_meta).\n"))
     cat(sprintf(" -c counts.file\n\tInput file in rds-format, containing raw read counts for all samples and features (output by the program get_expr).\n"))
     cat(sprintf(" -e ercc.counts.file\n\tInput file in rds-format, containing raw read counts for all samples and ERCC spike-in features (output by the program get_expr).\n"))
