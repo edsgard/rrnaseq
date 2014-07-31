@@ -54,18 +54,17 @@ get_expr -i $rpkmforgenes_file -o $datadir
 
 #Plot mapping stats
 mapstats -m meta.rds -c counts.rds -o ${pdfdir}/'seq_mapping' -q qc.rds
-```
 
-####Further examples
-
-#####Dry-run the program 'rqc' to generate a shell script with possible commands to execute
-```Shell
+#Dry-run the program 'rqc' to generate a shell script with possible commands to execute
 rqc -m mapstats.tab -e $rpkmforgenes_file -d $datadir -p $pdfdir -b $brenneckedir -y
 cat rqc.sh
 ```
 
+#####Further examples
+Above, the program 'rqc' was dry-run to generate a shell script (rqc.sh) with possible commands to execute. Look in rqc.sh and change or add input arguments as you wish.
+
 You can also see test/rqc.sh for a complete list of available programs and
-example program calls.
+example program calls, but there the directories are set according to the test directory.
 
 
 
