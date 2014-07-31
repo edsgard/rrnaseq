@@ -99,7 +99,12 @@ plot.gene2nsamples.expr <- function(rpkm, meta.mat, strat.factor, rpkm.cutoff, n
 }
     
 gene2nsamples <- function(rpkm, meta.mat, strat.factor, rpkm.cutoff){
-        
+
+    #Ensure that the same set of samples in rpkm and meta.mat
+    shared.samples = intersect(colnames(rpkm), rownames(meta.mat))
+    rpkm = rpkm[, shared.samples]
+    meta.mat = meta.mat[shared.samples, ]
+    
     #number of cells with expression per stratum
     if(strat.factor == 'unstrat'){
         stratum2id = list(unstrat = colnames(rpkm))
@@ -237,10 +242,11 @@ read.rpkm <- function(rpkm.files){
     #####
     #Get ERCC
     #####
-    ercc.id = rownames(rpkm.list[[1]])[grep('^ERCC-', rownames(rpkm.list[[1]]))]
+    ercc.id = unique(unlist(lapply(rpkm.list, function(jsample.rpkm){rownames(jsample.rpkm)[grep('^ERCC-', rownames(jsample.rpkm))]})))    
+    #ercc.id = rownames(rpkm.list[[1]])[grep('^ERCC-', rownames(rpkm.list[[1]]))]
     n.ercc = length(ercc.id)
     if(n.ercc != 92){
-        warning('92 ERCCs not present in first file')
+        warning('Number of ERCC ids identified differs from 92!')
     }
     
     #bind rpkm

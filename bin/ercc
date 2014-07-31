@@ -24,7 +24,7 @@ spec = matrix(c(
   'min.prop', 'p', 1, 'double',
   'min.rpkm', 'q', 1, 'double',
   'log.size.cutoff', 'u', 1, 'double',
-  'ercc.rpkm.frac.adjust', 'f', 1, 'logical',
+  'ercc.rpkm.frac.adjust', 'f', 0, 'logical',
   'cex', 'x', 1, 'double',
   'annot.file', 'a', 1, 'character',
   'lib.dir', 'l', 1, 'character',
@@ -46,7 +46,7 @@ usage <- function(spec){
   cat(sprintf(" -p min.prop\n\tMinimum proportion of expressed ERCC transcripts, otherwise sample will be filtered. Default: 0.5\n"))
   cat(sprintf(" -q min.rpkm\n\tRPKM expression cutoff determining if a transcript is expressed or not. Default: 1\n"))
   cat(sprintf(" -u log.size.cutoff\n\tMaximum size-factor cutoff, based on the fraction of total ERCC expression of a sample divided with expression from all its transcripts. Size-factor is calculated compared to the median of such fractions. Samples deviating from the median more than log.size.cutoff times are filtered. Default: 1\n"))
-  cat(sprintf(" -f ercc.rpkm.frac.adjust\n\tAdjust the ERCC RPKM values based on the RPKM ERCC size factor (fraction of ERCC expression divided with total expression). Default: FALSE\n"))
+  cat(sprintf(" -f ercc.rpkm.frac.adjust\n\tAdjust the ERCC RPKM values based on the RPKM ERCC size factor (fraction of ERCC expression divided with total expression)\n"))
   cat(sprintf(" -x cex\n\tMagnification level of the text in the figures. Default: 0.8\n"))
   cat(sprintf(" -a annot.file\n\tInput file in rds-format, containing spike-in annotation downloaded from life-technologies web-site. Default: cmds_095046.rds, residing in a a subdir '../annot' relative to where this program was executed from.\n"))
   cat(sprintf(" -l lib.dir\n\tLibrary directory with required R functions. Default: A subdir residing at '../lib' relative to where this program was executed from.\n\n"))

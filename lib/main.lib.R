@@ -363,6 +363,7 @@ gene.filter <- function(meta.file, rpkm.file, rpkm.postqc.file, gene2nsamples.pd
     
     #Filter genes
     if(filter.bool){
+        print(nrow(rpkm))
         rpkm = gene2nsamples.expr.filter(rpkm, n.cells.cutoff, rpkm.cutoff, strat.factor, meta.mat)
         print(nrow(rpkm))
 
@@ -914,7 +915,9 @@ ercc <- function(meta.file, real.rpkm.file, real.counts.file, ercc.rpkm.file, er
     
     #Params
     strat.factor.color = paste(strat.factor, 'color', sep = '.')
-
+    pdf.w = 20
+    pdf.h = 20
+    
     #Create output dir    
     dir.create(out.dir, showWarnings = FALSE, recursive = TRUE)
 
@@ -941,40 +944,41 @@ ercc <- function(meta.file, real.rpkm.file, real.counts.file, ercc.rpkm.file, er
     pass.samples = colnames(real.rpkm)
     ercc.rpkm = ercc.rpkm[, pass.samples]
     meta.mat = meta.mat[pass.samples, ]
+
     
-        
     ###
     #Filter samples
     ###
-    dim(ercc.rpkm) #92 38
+    print(dim(ercc.rpkm)) #92 n.samples
     
     #Rm samples with no ERCC in the rpkm annot (they didn't have ERCC spiked in to begin with either)
     ercc.ind = which(apply(ercc.rpkm, 2, function(j.ercc){length(which(!is.na(j.ercc))) > 0}))
     pass.samples = names(ercc.ind) 
     ercc.rpkm = ercc.rpkm[, pass.samples]
-    ncol(ercc.rpkm) #38
+    print(ncol(ercc.rpkm)) #
 
     #Rm samples with reads mapped to less than n ERCC transcripts
     ercc.ind = which(apply(ercc.rpkm, 2, function(j.ercc){length(which(j.ercc != 0)) > n.ercc.min}))
     pass.samples = names(ercc.ind)
-    length(pass.samples) #38
     ercc.rpkm = ercc.rpkm[, pass.samples]
+    print(length(pass.samples)) #
         
     #For each cell, proportion of expressed ERCC transcripts > min.rpkm should be greater than min.prop
     ercc.ind = which(apply(ercc.rpkm, 2, function(j.ercc){j.ercc = j.ercc[which(j.ercc != 0)]; prop.expr = length(which(j.ercc > min.rpkm)) / length(j.ercc); return(prop.expr >= min.prop)}))
     pass.samples = names(ercc.ind)    
-    length(pass.samples) #38
+    print(length(pass.samples)) #
 
     #apply filter
     ercc.rpkm = ercc.rpkm[, pass.samples]    
     meta.mat = meta.mat[pass.samples, ]
-    
+    real.rpkm = real.rpkm[, pass.samples]
 
+    
     ###
     #Filter on fraction of spike-in RNA
     ###
-    ercc.sum = apply(ercc.rpkm[, pass.samples], 2, sum)
-    real.sum = apply(real.rpkm[, pass.samples], 2, sum)
+    ercc.sum = apply(ercc.rpkm, 2, sum)
+    real.sum = apply(real.rpkm, 2, sum)
     ercc.frac = ercc.sum / (ercc.sum + real.sum)
     
     #calculate a size factor relative the median frac
@@ -989,11 +993,13 @@ ercc <- function(meta.file, real.rpkm.file, real.counts.file, ercc.rpkm.file, er
 
     #Rm samples with more than ten-fold difference to median
     pass.samples = names(log.size.factor)[which(abs(log.size.factor) <= log.size.cutoff)]
-    length(pass.samples) #38
+    print(length(pass.samples)) #
 
     #apply filter
     ercc.rpkm = ercc.rpkm[, pass.samples]    
     meta.mat = meta.mat[pass.samples, ]
+    real.counts = real.counts[, pass.samples]
+    ercc.counts = ercc.counts[, pass.samples]        
     size.factor = size.factor[pass.samples]
 
     
@@ -1108,14 +1114,14 @@ ercc <- function(meta.file, real.rpkm.file, real.counts.file, ercc.rpkm.file, er
     ###
     #Fraction of counts ERCC vs Real
     ###
-
+    
+    #calculate fractions
     sample2sum = colSums(real.counts)
-    sample2sum.ercc = colSums(ercc.counts[, colnames(real.counts)])
-    ercc.frac = sample2sum.ercc / (sample2sum + sample2sum.ercc)
-
+    sample2sum.ercc = colSums(ercc.counts)
+    ercc.frac = sample2sum.ercc / (sample2sum + sample2sum.ercc)    
 
     #barplot
-    pdf(file = fraction.ercc.barplot.pdf)
+    pdf(file = fraction.ercc.barplot.pdf, width = pdf.w, height = pdf.h)
     bp = barplot(ercc.frac, axes = FALSE, axisnames = FALSE, ylab = 'Fraction of ERCC reads', main = '', col = meta.mat[, strat.factor.color], border = NA)
     axis(2)
     axis(1, at = bp, labels = meta.mat[, 'id'], cex.axis = cex, las = 2)
