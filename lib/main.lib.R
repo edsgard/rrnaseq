@@ -594,7 +594,8 @@ sample.hclust <- function(meta.file, rpkm.file, sample.hclust.pdf, cor.meth, n.b
     col.clust.pdf = sub('hclust.', paste('hclust.colors.', cor.meth, '.', sep = ''), sample.hclust.pdf)
     strat.factor.col = paste(strat.factor, 'color', sep = '.')
     ind.factor.col = paste(ind.factor, 'color', sep = '.')
-
+    pdf.w = 20
+    pdf.h = 20
     
     ###
     #Load data
@@ -644,7 +645,7 @@ sample.hclust <- function(meta.file, rpkm.file, sample.hclust.pdf, cor.meth, n.b
         d = dendrapply(as.dendrogram(col.clust), labelCol, meta.mat = meta.mat, strat.factor = strat.factor, cex = cex)
 
         #Plot cluster
-        pdf(clust.pdf)
+        pdf(clust.pdf, width = pdf.w, height = pdf.h)
         plot(d, cex = cex)
         dev.off()
 

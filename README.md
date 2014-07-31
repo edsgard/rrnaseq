@@ -10,7 +10,8 @@ Currently the starting input is a tab-separated file with RPKM values and raw re
 ###INSTALLATION
 1. Install R dependencies with install.packages or via biocLite. In R:
 
-		pkgs = c('DESeq2', 'genefilter', 'statmod', 'gplots', 'RColorBrewer', 'impute', 'moduleColor', 'graphics')
+		pkgs = c('DESeq2', 'genefilter', 'statmod', 'gplots',
+		'RColorBrewer', 'impute', 'moduleColor', 'graphics', 'getopt')
 		source('http://www.bioconductor.org/biocLite.R')
 		biocLite(pkgs)
 
