@@ -2,9 +2,11 @@
 
 TODO
 ------------------
+*Empty rows in qc.rds if application of sample_filter between filter settings
 *subset (_genes, _samples)
 *Add heatmap of rows and cols
 *Fix cor.res.list updates such that order of program calls doesnt matter
+*Improve as R API (input and return data-structures rather than I/O files)
 *Add error-check if sample names differ between meta.rds and rpkm.rds
 
 
@@ -18,6 +20,9 @@ IDEAS
 
 UPDATES
 -------------------
+
+v1.0.3
+*Bug in updating qc.mat (not resetting the column to zeroes if rerunning and updating qc.mat)
 
 v1.0.2
 *Reran test

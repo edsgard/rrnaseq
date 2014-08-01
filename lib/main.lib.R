@@ -300,6 +300,7 @@ mapstats <- function(meta.file, counts.file, res.dir, strat.factor = 'nostrat', 
         qc.meta.mat = add.qc.col(qc.meta.mat, qc.col)
 
         #Set filter
+        qc.meta.mat[, qc.col] = 0
         qc.meta.mat[fail.samples, qc.col] = 1
         
         #Dump
@@ -428,6 +429,7 @@ sample2ngenes.expr <- function(meta.file, rpkm.file, sample2ngenes.pdf, qc.meta.
         qc.meta.mat = add.qc.col(qc.meta.mat, qc.col)
 
         #Set filter
+        qc.meta.mat[, qc.col] = 0
         qc.meta.mat[fail.samples, qc.col] = 1
 
         #Dump
@@ -573,6 +575,7 @@ sampledist.boxplot <- function(meta.file, rpkm.file, sample.cor.pdf, qc.meta.fil
         qc.meta.mat = add.qc.col(qc.meta.mat, qc.col)
 
         #Set filter
+        qc.meta.mat[, qc.col] = 0
         qc.meta.mat[fail.samples, qc.col] = 1
 
         #Dump
@@ -828,6 +831,7 @@ pca <- function(meta.file, rpkm.file, pca.pdf, plot.comp, log.fcn, pc.cutoff, fi
             qc.meta.mat = add.qc.col(qc.meta.mat, pc)
 
             #Set filter
+            qc.meta.mat[, qc.col] = 0
             qc.meta.mat[pc.fail.samples, pc] = 1
 
             #Dump

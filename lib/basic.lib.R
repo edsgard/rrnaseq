@@ -40,7 +40,7 @@ pears.cor.dist <- function(data.mat, ...){
     return(dist.mat)
 }
 
-plot.pairs.pca <- function(pca.basis, e.var, meta.mat = NA, factor.color = 'stage', point.text.cex = 0.7){
+plot.pairs.pca <- function(pca.basis, e.var, meta.mat = NA, factor.color = 'stage', point.text.cex = 0.7, points.cex = 1){
 
     #set up color mappings
     samples = rownames(pca.basis)
@@ -56,7 +56,7 @@ plot.pairs.pca <- function(pca.basis, e.var, meta.mat = NA, factor.color = 'stag
         
     #set up panels
     point.text.panel <- function(x, y){text(x, y, labels = samples, col = cell.color, cex = point.text.cex)}
-    point.panel <- function(x, y){points(x, y, col = cell.color, pch = 16)}
+    point.panel <- function(x, y){points(x, y, col = cell.color, pch = 16, cex = points.cex)}
     diag.panel <- function(x, y, labels, ...){
         #density histogram
         pu <- par("usr")
