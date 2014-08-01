@@ -30,14 +30,14 @@ gene_filter -m meta.rds -r rpkm.rds -o rpkm.postqc.rds -d /Volumes/Data/cloud/gd
 sample2ngenes_expr -m meta.rds -r rpkm.rds -o /Volumes/Data/cloud/gdrive/work/rspd/code/my/git/rrnaseq/test/rqc/pdf/basic/sample2ngenes.dens.pdf -q qc.rds
 
 #Sample distance heatmap
-sampledist_heatmap -m meta.rds -r rpkm.rds -o /Volumes/Data/cloud/gdrive/work/rspd/code/my/git/rrnaseq/test/rqc/pdf/sampledist/sample.heatmap.pdf
+sampledist_heatmap -m meta.rds -r rpkm.rds -o /Volumes/Data/cloud/gdrive/work/rspd/code/my/git/rrnaseq/test/rqc/pdf/sampledist/sample.heatmap.pdf -e sampledist.cor.res.rds
 
 #Sample distance boxplot
-sampledist_boxplot -m meta.rds -r rpkm.rds -o /Volumes/Data/cloud/gdrive/work/rspd/code/my/git/rrnaseq/test/rqc/pdf/sampledist/sample.cor.pdf -q qc.rds
+sampledist_boxplot -m meta.rds -r rpkm.rds -o /Volumes/Data/cloud/gdrive/work/rspd/code/my/git/rrnaseq/test/rqc/pdf/sampledist/sample.cor.pdf -q qc.rds -e sampledist.cor.res.rds
 
 #Sample hierarchical clustering
 #no boostrap
-sample_hclust -m meta.rds -r rpkm.rds -o /Volumes/Data/cloud/gdrive/work/rspd/code/my/git/rrnaseq/test/rqc/pdf/sampledist/sample.hclust.pdf -b 0
+sample_hclust -m meta.rds -r rpkm.rds -o /Volumes/Data/cloud/gdrive/work/rspd/code/my/git/rrnaseq/test/rqc/pdf/sampledist/sample.hclust.pdf -b 0 -e sampledist.cor.res.rds
 #with bootstrap
 sample_hclust -m meta.rds -r rpkm.rds -o /Volumes/Data/cloud/gdrive/work/rspd/code/my/git/rrnaseq/test/rqc/pdf/sampledist/sample.hclust.b_100.pdf -b 100
 
@@ -66,7 +66,8 @@ gene_filter -m meta.rds -r counts.postqc.rds -o counts.postqc.rds -p FALSE
 #########
 #Plot ERCC stats
 #########
-ercc -m meta.rds -r rpkm.rds -c counts.rds -e ercc.rpkm.rds -d ercc.counts.rds -o /Volumes/Data/cloud/gdrive/work/rspd/code/my/git/rrnaseq/test/rqc/pdf/ercc
+ercc -m meta.rds -r rpkm.rds -c counts.rds -e ercc.rpkm.rds -d ercc.counts.rds -o /Volumes/Data/cloud/gdrive/work/rspd/code/my/git/rrnaseq/test/rqc/pdf/ercc/fracadjusted_false
+ercc -m meta.rds -r rpkm.rds -c counts.rds -e ercc.rpkm.rds -d ercc.counts.rds -f -o /Volumes/Data/cloud/gdrive/work/rspd/code/my/git/rrnaseq/test/rqc/pdf/ercc/fracadjusted_true
 
 
 #########
