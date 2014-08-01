@@ -69,8 +69,8 @@ example program calls, but there the directories are set according to the test d
 
 
 
-###TEST
-The file 'run.rqc.sh' in the 'test' subdirectory provides an example of how to run the script 'rqc' that with the dry-run flag will generate a file (rqc.sh) with commands that calls all of the available programs in the rrnaseq suite.. See the 'run.rqc.sh' and the generated 'rqc.sh' file for a test example:
+###TEST AND EXAMPLE OUTPUT
+Example output you find in the 'test/rqc' subdirectory. The file 'run.rqc.sh' in the 'test' subdirectory provides an example of how to run the script 'rqc' that with the dry-run flag will generate a file (rqc.sh) with commands that calls all of the available programs in the rrnaseq suite. See 'run.rqc.sh' and the generated 'rqc.sh' file for a test example:
 
 ```Shell
 cd test
