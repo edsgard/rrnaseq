@@ -120,8 +120,21 @@ mapstats <- function(meta.file, counts.file, res.dir, strat.factor = 'nostrat', 
     
     #Read data
     meta.mat = readRDS(meta.file)
+    counts.mat = readRDS(counts.file)
     print(dim(meta.mat)) #
 
+    #Error-check
+    shared.samples = intersect(colnames(counts.mat), meta.mat[, 'id'])
+    n.shared.samples = length(shared.samples)
+    n.count.samples = ncol(counts.mat)
+    n.meta.samples = length(unique(meta.mat[, 'id']))
+    if(n.shared.samples != n.count.samples){
+        warning(sprintf("The sample names in the count matrix (column names) do not fully agree with the sample id column in the matrix with the sample meta-information.\n n.data.samples: %i\n n.meta.samples: %i\n n.shared.samples: %i", n.count.samples, n.meta.samples, n.shared.samples))
+    }
+    
+    #Subset counts.mat
+    counts.mat = counts.mat[, shared.samples]
+    
     #Colormaps
     strat.factor.color = paste(strat.factor, 'color', sep = '.')
     factor2color.map = unique(meta.mat[, c(strat.factor, strat.factor.color)])
@@ -224,12 +237,11 @@ mapstats <- function(meta.file, counts.file, res.dir, strat.factor = 'nostrat', 
         #######
         #Number of reads mapped to gene annotation
         ######
-        refseq.counts = readRDS(counts.file)
-        refseq.counts.sample = colSums(refseq.counts[, meta.mat[, 'id']])
+        counts.mat.sample = colSums(counts.mat)
 
         #barplot
         pdf(file = file.path(res.dir, 'n.reads.annotmapped.barplot.pdf'), width = pdf.w, height = pdf.h)
-        bp = barplot(refseq.counts.sample, axes = FALSE, axisnames = FALSE, ylab = '# of reads', main = '', col = meta.mat[, strat.factor.color], border = NA)
+        bp = barplot(counts.mat.sample, axes = FALSE, axisnames = FALSE, ylab = '# of reads', main = '', col = meta.mat[, strat.factor.color], border = NA)
         axis(2)
         axis(1, at = bp, labels = meta.mat[, 'id'], cex.axis = cex, las = 2)
         abline(h = nreads.cutoff)
@@ -238,7 +250,7 @@ mapstats <- function(meta.file, counts.file, res.dir, strat.factor = 'nostrat', 
 
         #density
         pdf(file = file.path(res.dir, 'n.reads.annotmapped.dens.pdf'))
-        plot(density(log10(refseq.counts.sample)), xlab = 'log10(# of reads)', ylab = 'Density: # of samples', main= '', col = meta.mat[, strat.factor.color])
+        plot(density(log10(counts.mat.sample)), xlab = 'log10(# of reads)', ylab = 'Density: # of samples', main= '', col = meta.mat[, strat.factor.color])
         dev.off()
 
 
@@ -248,8 +260,8 @@ mapstats <- function(meta.file, counts.file, res.dir, strat.factor = 'nostrat', 
         ####
         n.reads = meta.mat[, 'n.reads.uniq.mapped']
 
-        #TBD: this should be wrong!?: frac.refseq = refseq.counts.sample / (refseq.counts.sample + n.reads)
-        frac.refseq = refseq.counts.sample / n.reads
+        #TBD: this should be wrong!?: frac.refseq = counts.mat.sample / (counts.mat.sample + n.reads)
+        frac.refseq = counts.mat.sample / n.reads
     
         #barplot
         pdf(file = file.path(res.dir, 'fraction.annotmapped.barplot.pdf'), width = pdf.w, height = pdf.h)
@@ -474,9 +486,42 @@ sampledist.heatmap <- function(meta.file, rpkm.file, sample.heatmap.pdf, strat.f
         #get dist and hclust 
         col.dist.mat = as.dist(((cor.res * -1) + 1) / 2)
         col.clust = hclust(col.dist.mat)
+        
+        cor.res.list = list(cor.res = cor.res, col.clust = col.clust)
     }else{
-        cor.res = cor.res.list[['cor.res']]
-        col.clust = cor.res.list[['col.clust']]
+
+        if(length(which(names(cor.res.list) == 'col.res')) != 0){
+            cor.res = cor.res.list[['cor.res']]
+
+            #get col.clust
+            if(length(which(names(cor.res.list) == 'col.clust')) != 0){
+                col.clust = cor.res.list[['col.clust']]
+            }else{            
+                col.dist.mat = as.dist(((cor.res * -1) + 1) / 2)
+                col.clust = hclust(col.dist.mat)
+
+                #store result
+                cor.res.list = c(cor.res.list, list(col.clust = col.clust))
+            }
+        }else{
+            
+            #rm cols with constant variance
+            const.cols = which(apply(rpkm, 2, function(x){var(x) == 0}))
+            if(length(const.cols) != 0){
+                warning('There were constant columns. These were removed.')
+                rpkm = rpkm[, setdiff(1:ncol(rpkm), const.cols)]
+            }
+        
+            #Pairwise dist btw samples
+            cor.res = cor(rpkm, use="pairwise.complete.obs", method = cor.meth)
+
+            #get dist and hclust 
+            col.dist.mat = as.dist(((cor.res * -1) + 1) / 2)
+            col.clust = hclust(col.dist.mat)
+
+            #add to list
+            cor.res.list = c(cor.res.list, list(cor.res = cor.res, col.clust = col.clust))            
+        }                
     }
     
     #Plot
@@ -486,7 +531,7 @@ sampledist.heatmap <- function(meta.file, rpkm.file, sample.heatmap.pdf, strat.f
     dev.off()
 
 
-    return(list(cor.res = cor.res, col.clust = col.clust))
+    return(cor.res.list)
 }
 
 
@@ -529,8 +574,27 @@ sampledist.boxplot <- function(meta.file, rpkm.file, sample.cor.pdf, qc.meta.fil
         #Pairwise dist btw samples
         cor.res = cor(rpkm, use="pairwise.complete.obs", method = cor.meth)
 
+        #store result
+        cor.res.list = list(cor.res = cor.res)
+
     }else{
-        cor.res = cor.res.list[['cor.res']]
+        if(length(which(names(cor.res.list) == 'col.res')) != 0){
+            cor.res = cor.res.list[['cor.res']]
+        }else{
+            
+            #rm cols with constant variance
+            const.cols = which(apply(rpkm, 2, function(x){var(x) == 0}))
+            if(length(const.cols) != 0){
+                warning('There were constant columns. These were removed.')
+                rpkm = rpkm[, setdiff(1:ncol(rpkm), const.cols)]
+            }
+
+            #Pairwise dist btw samples
+            cor.res = cor(rpkm, use="pairwise.complete.obs", method = cor.meth)
+
+            #store result
+            cor.res.list = c(cor.res.list, list(cor.res = cor.res))
+        }
     }
     
     #Max correlation to another sample
@@ -582,8 +646,8 @@ sampledist.boxplot <- function(meta.file, rpkm.file, sample.cor.pdf, qc.meta.fil
         saveRDS(qc.meta.mat, file = qc.meta.file)
         write.table(qc.meta.mat, quote = F, col.names = NA, sep = '\t', file = qc.meta.tab.file)
     }
-
-    return(list(cor.res = cor.res))
+    
+    return(cor.res.list)
 }
 
 sample.hclust <- function(meta.file, rpkm.file, sample.hclust.pdf, cor.meth, n.boot, strat.factor, ind.factor, cex, cor.res.list = NA){
@@ -641,8 +705,40 @@ sample.hclust <- function(meta.file, rpkm.file, sample.hclust.pdf, cor.meth, n.b
             
             cor.res.list = list(cor.res = cor.res, col.clust = col.clust)
         }else{
-            cor.res = cor.res.list[['cor.res']]
-            col.clust = cor.res.list[['col.clust']]
+            if(length(which(names(cor.res.list) == 'col.res')) != 0){
+
+                #get cor.res
+                cor.res = cor.res.list[['cor.res']]
+
+                #get col.clust
+                if(length(which(names(cor.res.list) == 'col.clust')) != 0){
+                    col.clust = cor.res.list[['col.clust']]
+                }else{            
+                    col.dist.mat = as.dist(((cor.res * -1) + 1) / 2)
+                    col.clust = hclust(col.dist.mat)
+
+                    #store result
+                    cor.res.list = c(cor.res.list, list(col.clust = col.clust))
+                }
+            }else{
+            
+                #rm cols with constant variance
+                const.cols = which(apply(rpkm, 2, function(x){var(x) == 0}))
+                if(length(const.cols) != 0){
+                    warning('There were constant columns. These were removed.')
+                    rpkm = rpkm[, setdiff(1:ncol(rpkm), const.cols)]
+                }
+        
+                #Pairwise dist btw samples
+                cor.res = cor(rpkm, use="pairwise.complete.obs", method = cor.meth)
+
+                #get dist and hclust 
+                col.dist.mat = as.dist(((cor.res * -1) + 1) / 2)
+                col.clust = hclust(col.dist.mat)
+
+                #add to list
+                cor.res.list = c(cor.res.list, list(cor.res = cor.res, col.clust = col.clust))            
+            }
         }
         
         #Colormap
@@ -680,8 +776,12 @@ sample.hclust <- function(meta.file, rpkm.file, sample.hclust.pdf, cor.meth, n.b
         #cluster
         pvclust.res = pvclust(rpkm, method.dist = cor.dist.fcn, nboot = n.boot)
         
-        #dump        
-        cor.res.list = list(pvclust.res = pvclust.res)
+        #dump
+        if(is.na(cor.res.list)){
+            cor.res.list = list(pvclust.res = pvclust.res)
+        }else{
+            cor.res.list = c(cor.res.list, list(pvclust.res = pvclust.res))
+        }
         #saveRDS(pvclust.res, file = '/Volumes/Data/cloud/gdrive/work/rspd/code/my/rrnaseq/test/rqc/data/tmp.rds')
 
 

@@ -2,12 +2,11 @@
 
 TODO
 ------------------
-*Empty rows in qc.rds if application of sample_filter between filter settings
+*Add heatmap of rows and cols (see pca_heat_hclust for example code)
+*Handle empty rows in qc.rds if application of sample_filter between filter settings
 *subset (_genes, _samples)
-*Add heatmap of rows and cols
-*Fix cor.res.list updates such that order of program calls doesnt matter
 *Improve as R API (input and return data-structures rather than I/O files)
-*Add error-check if sample names differ between meta.rds and rpkm.rds
+*rm warnings ``the condition has length > 1 and only the first element will be used''
 
 
 
@@ -20,6 +19,10 @@ IDEAS
 
 UPDATES
 -------------------
+
+v1.0.4
+*Fix cor.res.list updates such that order of program calls doesnt matter (sampledist_boxplot first or not)
+*Add error-check to mapstats, checking if sample names differ between meta.rds and rpkm.rds
 
 v1.0.3
 *Bug in updating qc.mat (not resetting the column to zeroes if rerunning and updating qc.mat)
