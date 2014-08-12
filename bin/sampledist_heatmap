@@ -86,7 +86,5 @@ cor.res.list = sampledist.heatmap(opt[['meta.file']], opt[['rpkm.file']], opt[['
 #Dump
 ###
 if(!is.null(opt[['cor.res.file']])){
-    if(!file.exists(opt[['cor.res.file']])){
-        saveRDS(cor.res.list, file = opt[['cor.res.file']])
-    }
+    saveRDS(cor.res.list, file = opt[['cor.res.file']])
 }

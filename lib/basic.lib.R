@@ -1,5 +1,29 @@
 
 
+rm.const.vec <- function(data.mat, col.rm = TRUE, row.rm = TRUE){
+
+    #rm cols with constant variance
+    if(col.rm){
+        const.cols = which(apply(data.mat, 2, function(x){var(x) == 0}))
+        if(length(const.cols) != 0){
+            warning('There were constant columns. These were removed.')
+            data.mat = data.mat[, setdiff(1:ncol(data.mat), const.cols)]
+        }
+    }
+
+    #rm rows (genes) with constant variance
+    if(row.rm){
+    
+        const.rows = which(apply(data.mat, 1, function(x){var(x) == 0}))
+        if(length(const.rows) != 0){
+            warning('There were constant rows. These were removed.')
+            data.mat = data.mat[setdiff(1:nrow(data.mat), const.rows), ]
+        }
+    }
+
+    return(data.mat)
+}
+
 spear.cor.col.dist <- function(x, ...){
 #For use by pvclust
     

@@ -1,0 +1,157 @@
+#!/usr/bin/env Rscript
+#heatmap -i data.tab -o heatmap.pdf -r rows.tab -l cols.tab 
+#Column vs row heatmap
+
+
+###
+#Get opt
+###
+library('getopt')
+
+argv = commandArgs(trailingOnly = F)
+scriptPath = dirname(sub("--file=", "", argv[grep("--file", argv)]))
+#source(file.path(scriptPath, '../lib/getopt.R')) #If one wants to avoid dependency of installed R package (getopt).
+argv = commandArgs(trailingOnly = T)
+
+spec = matrix(c(
+    'data.file', 'i', 1, 'character',
+    'heatmap.pdf', 'o', 1, 'character',
+    'rows.file', 'r', 1, 'character',
+    'columns.file', 'u', 1, 'character',
+    'meta.file', 'm', 1, 'character',
+    'strat.factor', 's', 1, 'character',
+    'cor.meth', 'c', 1, 'character',
+    'scale', 'a', 1, 'character',
+    'cor.res.file', 'e', 1, 'character',
+    'log.transform', 't', 1, 'character',
+    'cex.row', 'x', 1, 'double',
+    'cex.col', 'y', 1, 'double',
+    'color.pad', 'p', 0, 'logical',
+    'lib.dir', 'l', 1, 'character',
+    'help', 'h', 0, 'logical'
+    ), byrow=TRUE, ncol=4);
+opt = getopt(spec)
+
+usage <- function(spec){
+  cat(getopt(spec, command = 'heatmap', usage=TRUE));
+  cat(sprintf("Column vs row heatmap\n"))
+  cat(sprintf(" -i data.file\n\tInput file in rds-format or tab-separated format, containing a matrix with data values.\n"))
+  cat(sprintf(" -o heatmap.pdf\n\tOutput file to which the plot is printed. Default: heatmap.pdf\n"))
+  cat(sprintf(" -r rows.file\n\tInput file containing row-names (typically genes) to subset the data matrix with. Default: NA\n"))
+  cat(sprintf(" -u columns.file\n\tInput file containing column-names (typically samples) to subset the data matrix with. Default: NA\n"))
+  cat(sprintf(" -m meta.file\n\tInput file in rds-format or tab-separated format, where the first column (row-names) is identical to the first row (column-names) of the data-value matrix. Default: NA\n"))
+  cat(sprintf(" -s strat.factor\n\tStratification factor present as a column in 'meta.file'. This will add a column color-bar to the heatmap. Default: nostrat\n"))
+  cat(sprintf(" -c cor.meth\n\tCorrelation method, see the fcn \"cor\". Default: spearman\n"))
+  cat(sprintf(" -a scale\n\tCharacter indicating if the values should be centered and scaled in either the row direction or the column direction, or none. See ?heatmap. Default: row\n"))
+  cat(sprintf(" -e cor.res.file\n\tFile in rds-format with a list containing correlation and clustering data-structures. If the file already exists the correlation results are read from it instead of being recalculated. Default: NA\n"))
+  cat(sprintf(" -t log.transform\n\tLog-transform function, to log the data before pc-basis calculation. To skip log-transformation set it to \"0\". Default: log10\n"))
+  cat(sprintf(" -x cex.row\n\tRow-label text magnification factor. Default: 0.7\n"))
+  cat(sprintf(" -y cex.col\n\tColumn-label text magnification factor. Default: 0.7\n"))
+  cat(sprintf(" -p color.pad\n\tPad the color-map of the heatmap such that the default middle-white is narrowed.\n"))
+  cat(sprintf(" -l lib.dir\n\tLibrary directory with required R functions. Default: A subdir residing at '../lib' relative to where this program was executed from.\n\n"))
+  q(status=1);
+}
+
+#Print usage if help flag set
+if(!is.null(opt[['help']])){
+  usage(spec)
+}
+
+#Error check that all required options were set
+if(is.null(opt[['data.file']])){warning('Error: "r" is a required option'); usage(spec);}
+
+#Set defaults for optional options
+if(is.null(opt[['heatmap.pdf']])){opt[['heatmap.pdf']] = 'heatmap.pdf';}
+if(is.null(opt[['rows.file']])){opt[['rows.file']] = NA;}
+if(is.null(opt[['columns.file']])){opt[['columns.file']] = NA;}
+if(is.null(opt[['meta.file']])){opt[['meta.file']] = NA;}
+if(is.null(opt[['strat.factor']])){opt[['strat.factor']] = NA;}
+if(is.null(opt[['cor.meth']])){opt[['cor.meth']] = 'spearman';}
+if(is.null(opt[['scale']])){opt[['scale']] = 'row';}
+if(is.null(opt[['log.transform']])){opt[['log.transform']] = 'log10';}
+if(is.null(opt[['cex.row']])){opt[['cex.row']] = 0.7;}
+if(is.null(opt[['cex.col']])){opt[['cex.col']] = 0.7;}
+if(is.null(opt[['color.pad']])){opt[['color.pad']] = FALSE;}
+if(is.null(opt[['lib.dir']])){opt[['lib.dir']] = file.path(scriptPath, '../lib');}
+if(is.null(opt[['cor.res.file']])){
+    cor.res.list = NA    
+}else{
+    if(file.exists(opt[['cor.res.file']])){
+        cor.res.list = readRDS(opt[['cor.res.file']])
+    }else{
+        cor.res.list = NA
+    }
+}
+if(opt[['log.transform']] != '0'){
+    log.fcn = get(opt[['log.transform']])
+}else{
+    log.fcn = 0
+}
+
+#Hardcoded params
+pdf.w = 20
+pdf.h = 20
+
+
+###
+#Source fcn libs
+###
+source(file.path(opt[['lib.dir']], 'basic.lib.R'), chdir = TRUE)
+source(file.path(opt[['lib.dir']], 'expr.lib.R'), chdir = TRUE)
+source(file.path(opt[['lib.dir']], 'main.lib.R'), chdir = TRUE)
+
+
+###
+#Read data
+###
+
+#Data matrix
+if(length(grep('\\.rds$', opt[['data.file']])) != 0){
+    data.mat = readRDS(opt[['data.file']])
+}else{
+    data.mat = read.table(opt[['data.file']], stringsAsFactors = FALSE, sep = '\t')
+}
+
+#Meta
+if(!is.na(opt[['meta.file']])){
+    if(length(grep('\\.rds$', opt[['meta.file']])) != 0){
+        meta.mat = readRDS(opt[['meta.file']])
+    }else{
+        meta.mat = read.table(opt[['meta.file']], stringsAsFactors = FALSE, sep = '\t')
+    }
+}else{
+    meta.mat = NA
+}
+
+
+###
+#Subset data
+###
+#Rows
+if(!is.na(opt[['rows.file']])){
+    row.sel = read.table(opt[['rows.file']], stringsAsFactors = FALSE)[[1]]
+    #print(intersect(rownames(data.mat), row.sel))
+    data.mat = data.mat[row.sel, ]
+
+}
+#Cols
+if(!is.na(opt[['columns.file']])){
+    col.sel = read.table(opt[['columns.file']], stringsAsFactors = FALSE)[[1]]
+    data.mat = data.mat[, col.sel]
+}
+
+
+###
+#Plot
+###
+pdf(file = opt[['heatmap.pdf']], width = pdf.w, height = pdf.h)
+cor.res.list = rseq.heatmap(data.mat, opt[['cor.meth']], meta.mat, opt[['strat.factor']], opt[['log.fcn']], cor.res.list, opt[['color.pad']], cexRow = opt[['cex.row']], cexCol = opt[['cex.col']], scale = opt[['scale']])
+dev.off()
+
+
+###
+#Dump
+###
+if(!is.null(opt[['cor.res.file']])){
+    saveRDS(cor.res.list, file = opt[['cor.res.file']])
+}

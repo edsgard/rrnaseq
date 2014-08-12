@@ -1,5 +1,62 @@
 
 
+rseq.hclust <- function(rpkm, cor.meth, cor.res.list, store.col = 'col'){
+
+    cor.store.col = paste(store.col, 'cor', sep = '.')
+    hclust.store.col = paste(store.col, 'hclust', sep = '.')
+    
+    if(is.na(cor.res.list)){
+
+        #rm cols with constant variance
+        rpkm = rm.const.vec(rpkm, row.rm = FALSE)
+        
+        #Pairwise dist btw columns
+        cor.res = cor(rpkm, use="pairwise.complete.obs", method = cor.meth)
+    
+        #get dist and hclust 
+        col.dist.mat = as.dist(((cor.res * -1) + 1) / 2)
+        clust.res = hclust(col.dist.mat)
+
+        cor.res.list = list()
+        cor.res.list[[cor.store.col]] = cor.res
+        cor.res.list[[hclust.store.col]] = clust.res
+    }else{
+
+        if(length(which(names(cor.res.list) == cor.store.col)) != 0){
+            cor.res = cor.res.list[[cor.store.col]]
+
+            #get clust.res
+            if(length(which(names(cor.res.list) == hclust.store.col)) != 0){
+                clust.res = cor.res.list[[hclust.store.col]]
+            }else{            
+                col.dist.mat = as.dist(((cor.res * -1) + 1) / 2)
+                clust.res = hclust(col.dist.mat)
+
+                #store result
+                cor.res.list[[hclust.store.col]] = clust.res
+            }
+        }else{
+
+            #rm cols with constant variance
+            rpkm = rm.const.vec(rpkm, row.rm = FALSE)
+        
+            #Pairwise dist btw columns
+            cor.res = cor(rpkm, use="pairwise.complete.obs", method = cor.meth)
+
+            #get dist and hclust 
+            col.dist.mat = as.dist(((cor.res * -1) + 1) / 2)
+            clust.res = hclust(col.dist.mat)
+
+            #store result
+            cor.res.list[[cor.store.col]] = cor.res
+            cor.res.list[[hclust.store.col]] = clust.res
+        }                
+    }
+    
+    return(cor.res.list)
+}
+
+
 add.qc.col <- function(qc.meta.mat, qc.col){
     if(length(which(colnames(qc.meta.mat) == qc.col)) == 0){
         new.qc.col = rep(0, nrow(qc.meta.mat))

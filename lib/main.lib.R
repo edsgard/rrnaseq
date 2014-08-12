@@ -481,27 +481,27 @@ sampledist.heatmap <- function(meta.file, rpkm.file, sample.heatmap.pdf, strat.f
         }
         
         #Pairwise dist btw samples
-        cor.res = cor(rpkm, use="pairwise.complete.obs", method = cor.meth)
+        col.cor = cor(rpkm, use="pairwise.complete.obs", method = cor.meth)
     
         #get dist and hclust 
-        col.dist.mat = as.dist(((cor.res * -1) + 1) / 2)
+        col.dist.mat = as.dist(((col.cor * -1) + 1) / 2)
         col.clust = hclust(col.dist.mat)
         
-        cor.res.list = list(cor.res = cor.res, col.clust = col.clust)
+        cor.res.list = list(col.cor = col.cor, col.clust = col.clust)
     }else{
 
-        if(length(which(names(cor.res.list) == 'col.res')) != 0){
-            cor.res = cor.res.list[['cor.res']]
+        if(length(which(names(cor.res.list) == 'col.cor')) != 0){
+            col.cor = cor.res.list[['col.cor']]
 
             #get col.clust
             if(length(which(names(cor.res.list) == 'col.clust')) != 0){
                 col.clust = cor.res.list[['col.clust']]
             }else{            
-                col.dist.mat = as.dist(((cor.res * -1) + 1) / 2)
+                col.dist.mat = as.dist(((col.cor * -1) + 1) / 2)
                 col.clust = hclust(col.dist.mat)
 
                 #store result
-                cor.res.list = c(cor.res.list, list(col.clust = col.clust))
+                cor.res.list[['col.clust']] = col.clust
             }
         }else{
             
@@ -513,21 +513,21 @@ sampledist.heatmap <- function(meta.file, rpkm.file, sample.heatmap.pdf, strat.f
             }
         
             #Pairwise dist btw samples
-            cor.res = cor(rpkm, use="pairwise.complete.obs", method = cor.meth)
+            col.cor = cor(rpkm, use="pairwise.complete.obs", method = cor.meth)
 
             #get dist and hclust 
-            col.dist.mat = as.dist(((cor.res * -1) + 1) / 2)
+            col.dist.mat = as.dist(((col.cor * -1) + 1) / 2)
             col.clust = hclust(col.dist.mat)
 
             #add to list
-            cor.res.list = c(cor.res.list, list(cor.res = cor.res, col.clust = col.clust))            
+            cor.res.list = c(cor.res.list, list(col.cor = col.cor, col.clust = col.clust))            
         }                
     }
     
     #Plot
     heatmap.pdf = sub('heatmap', paste('heatmap.', cor.meth, sep = ''), sample.heatmap.pdf)
     pdf(file = heatmap.pdf, width = 10, height = 10, ...)
-    plot.heatmap.sample(cor.res, col.clust, meta.mat, strat.factor, cexRow = cex.sample, cexCol = cex.sample)
+    plot.heatmap.sample(col.cor, col.clust, meta.mat, strat.factor, cexRow = cex.sample, cexCol = cex.sample)
     dev.off()
 
 
@@ -572,14 +572,14 @@ sampledist.boxplot <- function(meta.file, rpkm.file, sample.cor.pdf, qc.meta.fil
         }
 
         #Pairwise dist btw samples
-        cor.res = cor(rpkm, use="pairwise.complete.obs", method = cor.meth)
+        col.cor = cor(rpkm, use="pairwise.complete.obs", method = cor.meth)
 
         #store result
-        cor.res.list = list(cor.res = cor.res)
+        cor.res.list = list(col.cor = col.cor)
 
     }else{
-        if(length(which(names(cor.res.list) == 'col.res')) != 0){
-            cor.res = cor.res.list[['cor.res']]
+        if(length(which(names(cor.res.list) == 'col.cor')) != 0){
+            col.cor = cor.res.list[['col.cor']]
         }else{
             
             #rm cols with constant variance
@@ -590,17 +590,17 @@ sampledist.boxplot <- function(meta.file, rpkm.file, sample.cor.pdf, qc.meta.fil
             }
 
             #Pairwise dist btw samples
-            cor.res = cor(rpkm, use="pairwise.complete.obs", method = cor.meth)
+            col.cor = cor(rpkm, use="pairwise.complete.obs", method = cor.meth)
 
             #store result
-            cor.res.list = c(cor.res.list, list(cor.res = cor.res))
+            cor.res.list = c(cor.res.list, list(col.cor = col.cor))
         }
     }
     
     #Max correlation to another sample
-    cor.res.noone = cor.res
-    cor.res.noone[which(cor.res.noone > 0.99)] = NA
-    max.cor = apply(cor.res.noone, 2, max, na.rm = TRUE)
+    col.cor.noone = col.cor
+    col.cor.noone[which(col.cor.noone > 0.99)] = NA
+    max.cor = apply(col.cor.noone, 2, max, na.rm = TRUE)
     max.cor = sort(max.cor)
 
     if(plot.bool){
@@ -609,12 +609,12 @@ sampledist.boxplot <- function(meta.file, rpkm.file, sample.cor.pdf, qc.meta.fil
         dir.create(dirname(sample.cor.pdf), showWarnings = FALSE, recursive = TRUE)
 
         #Order by median correlation
-        median.cor = apply(cor.res, 2, median)
+        median.cor = apply(col.cor, 2, median)
         median.cor = sort(median.cor)
 
         #Plot median.cor
         pdf(cor.boxplot.pdf)
-        boxplot(cor.res[, names(median.cor)], las = 2, cex.axis = cex.axis)
+        boxplot(col.cor[, names(median.cor)], las = 2, cex.axis = cex.axis)
         dev.off()
 
         #Plot max.cor
@@ -697,24 +697,24 @@ sample.hclust <- function(meta.file, rpkm.file, sample.hclust.pdf, cor.meth, n.b
             }
 
             #Pairwise dist btw samples
-            cor.res = cor(rpkm, use="pairwise.complete.obs", method = cor.meth)
+            col.cor = cor(rpkm, use="pairwise.complete.obs", method = cor.meth)
     
             #get dist and hclust 
-            col.dist.mat = as.dist(((cor.res * -1) + 1) / 2)
+            col.dist.mat = as.dist(((col.cor * -1) + 1) / 2)
             col.clust = hclust(col.dist.mat)
             
-            cor.res.list = list(cor.res = cor.res, col.clust = col.clust)
+            cor.res.list = list(col.cor = col.cor, col.clust = col.clust)
         }else{
-            if(length(which(names(cor.res.list) == 'col.res')) != 0){
+            if(length(which(names(cor.res.list) == 'col.cor')) != 0){
 
                 #get cor.res
-                cor.res = cor.res.list[['cor.res']]
+                col.cor = cor.res.list[['col.cor']]
 
                 #get col.clust
                 if(length(which(names(cor.res.list) == 'col.clust')) != 0){
                     col.clust = cor.res.list[['col.clust']]
                 }else{            
-                    col.dist.mat = as.dist(((cor.res * -1) + 1) / 2)
+                    col.dist.mat = as.dist(((col.cor * -1) + 1) / 2)
                     col.clust = hclust(col.dist.mat)
 
                     #store result
@@ -730,14 +730,14 @@ sample.hclust <- function(meta.file, rpkm.file, sample.hclust.pdf, cor.meth, n.b
                 }
         
                 #Pairwise dist btw samples
-                cor.res = cor(rpkm, use="pairwise.complete.obs", method = cor.meth)
+                col.cor = cor(rpkm, use="pairwise.complete.obs", method = cor.meth)
 
                 #get dist and hclust 
-                col.dist.mat = as.dist(((cor.res * -1) + 1) / 2)
+                col.dist.mat = as.dist(((col.cor * -1) + 1) / 2)
                 col.clust = hclust(col.dist.mat)
 
                 #add to list
-                cor.res.list = c(cor.res.list, list(cor.res = cor.res, col.clust = col.clust))            
+                cor.res.list = c(cor.res.list, list(col.cor = col.cor, col.clust = col.clust))            
             }
         }
         
@@ -750,8 +750,8 @@ sample.hclust <- function(meta.file, rpkm.file, sample.hclust.pdf, cor.meth, n.b
         dev.off()
 
         #Plot labels
-        stratum.color = as.character(meta.mat[colnames(cor.res), strat.factor.col])
-        ind.color = as.character(meta.mat[colnames(cor.res), ind.factor.col])
+        stratum.color = as.character(meta.mat[colnames(col.cor), strat.factor.col])
+        ind.color = as.character(meta.mat[colnames(col.cor), ind.factor.col])
         pdf(col.clust.pdf, width = 100, height = 7)
         plotHclustColors(col.clust, cbind(ind.color, stratum.color), cex.rowLabels = 10, rowLabels = '')
         dev.off()
@@ -979,6 +979,103 @@ scatter <- function(data.file, scatter.pdf, samples, transpose, log.fcn){
         }
     }
     dev.off()
+}
+
+rseq.heatmap <- function(data.mat, cor.meth = 'spearman', meta.mat = NA, strat.heat.factor = NA, log.fcn = log10, cor.res.list = NA, colorpad = FALSE, ColSideColors = NA, col.pal = NA, ...){ 
+# cexRow = 0.2 #500 rows: 0.2
+# cexCol = 0.2 #500 cols: 0.2
+#Colorbars
+# strat.heat.factors = c('stage', 'stage.ind', 'enrichment', 'tri.lin', 'bi.lin') 
+# genes = rownames(rpkm)
+# RowSideColors = feat.annot[genes, 'marker.color']        
+# marker2color.map = unique(feat.annot[, c('marker', 'marker.color')])
+
+    
+    library('marray') #maPalette
+    library('gplots')
+
+
+    ###
+    #Log
+    ###
+    if(is.function(log.fcn)){
+        data.mat = data.mat + 1e-10
+        data.mat = log.fcn(data.mat)
+    }
+
+    
+    ###
+    #Cluster cols
+    ###
+    #rm constant cols
+    data.mat = rm.const.vec(data.mat, row.rm = FALSE)
+    
+    #pairwise dist and cluster
+    cor.res.list = rseq.hclust(data.mat, cor.meth, cor.res.list, store.col = 'col')
+
+    #get dendrogram
+    col.dendro = as.dendrogram(cor.res.list[['col.hclust']])
+    col.dendro = reorder(col.dendro, colMeans(data.mat, na.rm = TRUE))
+
+    
+    ###
+    #Cluster rows
+    ###
+    #rm constant rows
+    data.mat = rm.const.vec(data.mat, col.rm = FALSE)
+    
+    #pairwise dist and cluster
+    cor.res.list = rseq.hclust(t(data.mat), cor.meth, cor.res.list, store.col = 'row')
+    
+    #get dendrogram
+    row.dendro = as.dendrogram(cor.res.list[['row.hclust']])
+    row.dendro = reorder(row.dendro, rowMeans(data.mat, na.rm = TRUE))
+
+
+    ###
+    #Set default colormap if col.pal == NA
+    ###
+    if(is.na(col.pal)){
+        if(colorpad){
+            pad.len = 20
+    
+            #pad red and blue to the ends of the pal    
+            col.pal = maPalette(low = "blue", high = 'red', mid='white', k = 10)
+            col.pal = c(rep(col.pal[1], pad.len), col.pal, rep(col.pal[length(col.pal)], pad.len))
+        }else{
+            #no padding    
+            col.pal = maPalette(low = "blue", high = 'red', mid='white', k = 50)
+            #col.pal = greenred(100) #alt: maPalette{marray)
+        }
+    }
+
+    
+    ###
+    #Colorbars
+    ###
+    meta.col.bar = !is.na(meta.mat) & !is.na(strat.heat.factor) & is.na(ColSideColors)
+    if(meta.col.bar){
+        color.col = paste(strat.heat.factor, 'color', sep = '.')
+        samples = colnames(data.mat)
+        meta.mat = meta.mat[samples, ]
+        ColSideColors = as.character(meta.mat[, color.col])
+        sample2color.map = unique(meta.mat[, c(strat.heat.factor, color.col)])
+    }
+
+
+    ###
+    #Plot
+    ###
+    if(is.na(ColSideColors)){
+        heatmap.2(data.mat, Colv = col.dendro, Rowv = row.dendro, col = col.pal, trace = 'none', ...)
+    }else{
+        heatmap.2(data.mat, Colv = col.dendro, Rowv = row.dendro, col = col.pal, trace = 'none', ColSideColors = ColSideColors, ...)
+    }
+    if(meta.col.bar){
+        legend('topright', legend = sample2color.map[, strat.heat.factor], col = sample2color.map[, color.col], lty = 1)
+    }
+
+    return(cor.res.list)
 }
 
 sample.filter <- function(data.file, qc.meta.file, out.file, filter.cols){

@@ -1,5 +1,10 @@
 
 
+
+v1.0.7
++heatmap of columns and rows
+*Bugfix: reusing clustering results from cor.res.list: cor.res -> col.cor
+
 v1.0.6
 *Bugfix: qc.col never set in pca filtering
 

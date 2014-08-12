@@ -139,6 +139,8 @@ echo '#########' >>rqc.sh
 echo '#Find genes with higher variance than the technical variance (ERCC)' >>rqc.sh
 echo var_genes_brennecke -m meta.rds -c counts.postqc.rds -e ercc.counts.rds -o ${brenneckedir} >>rqc.sh
 
+echo '#Heatmap of most variable genes found by var_genes_brennecke' >>rqc.sh
+#echo heatmap -i rpkm.rds -r topgenes.txt -o ${brenneckedir}/pdf/topgenes.heatmap.pdf
 
 
 #########
