@@ -353,7 +353,7 @@ var.genes.brennecke <- function(count.file, ercc.count.file, meta.file, out.dir,
     }
 
     #add stats using all cells
-    real.stats.list[['all']] = real.stats
+    real.stats.list[['nostrat']] = real.stats
     
 
     #########

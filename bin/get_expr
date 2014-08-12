@@ -32,7 +32,7 @@ usage <- function(spec){
   cat(sprintf(" -m meta.file\n\tInput file in rds-format, containing mapping statistics (output by the program get_meta). This is optional and will subset on the set of samples for which there is both data and meta-info available. Default: NA\n"))
   cat(sprintf(" -s meta.sample.col\n\tColumn name in the meta.file containing sample names that will be matched against the input file sample names. Default: 'sample'\n"))
   cat(sprintf(" -a file.list\n\tAdd this flag if the input file (-i) is a file containing a list of rpkmforgenes files to be read. Default: FALSE.\n"))
-  cat(sprintf(" -l lib.dir\n\tLibrary directory with required R functions. Default: A subdir residing '../lib' relative to where this program was executed from.\n\n"))
+  cat(sprintf(" -l lib.dir\n\tLibrary directory with required R functions. Default: A subdir residing at '../lib' relative to where this program was executed from.\n\n"))
   q(status=1);
 }
 

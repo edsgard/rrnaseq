@@ -20,6 +20,7 @@ spec = matrix(c(
   'gene2nsamples.pdf', 'd', 1, 'character',
   'log.rpkm.cutoff', 'c', 1, 'double',
   'n.cells.cutoff', 'n', 1, 'numeric',
+  'n.strata.cutoff', 'k', 1, 'numeric',
   'strat.factor', 's', 1, 'character',
   'filter.bool', 'f', 1, 'logical',
   'plot.bool', 'p', 1, 'logical',
@@ -37,7 +38,8 @@ usage <- function(spec){
   cat(sprintf(" -d gene2nsamples.pdf\n\tOutput file to which the plot is printed. Default: gene2nsamples.pdf\n"))
   cat(sprintf(" -c log.rpkm.cutoff\n\tExpression cutoff in log10-scale used to determine if a gene is expressed or not. Default: 0\n"))
   cat(sprintf(" -n n.cells.cutoff\n\tCutoff for the number of samples that a gene needs to be expressed in to not be filtered out. Default: 2\n"))
-  cat(sprintf(" -s strat.factor\n\tStratification factor, which will group the samples in some of the plots. Default: nostrat\n"))
+  cat(sprintf(" -k n.strata.cutoff\n\tCutoff for the number of strata that a gene needs to pass the n.cells.cutoff in. Default: 1\n"))
+  cat(sprintf(" -s strat.factor\n\tStratification factor, which will group the samples in some of the plots, and it is also used along with n.strata.cutoff. Default: nostrat\n"))
   cat(sprintf(" -f filter\n\tApply gene filter or not. Allowed values: {TRUE, FALSE}. Default: TRUE\n"))
   cat(sprintf(" -p plot\n\tPlot fraction of genes expressed versus number of samples. Allowed values: {TRUE, FALSE}. Default: TRUE\n"))
   cat(sprintf(" -l lib.dir\n\tLibrary directory with required R functions. Default: A subdir residing at '../lib' relative to where this program was executed from.\n\n"))
@@ -58,6 +60,7 @@ if(is.null(opt[['rpkm.postqc.file']])){warning('Error: "o" is a required option'
 if(is.null(opt[['gene2nsamples.pdf']])){opt[['gene2nsamples.pdf']] = 'gene2nsamples.pdf';}
 if(is.null(opt[['log.rpkm.cutoff']])){opt[['log.rpkm.cutoff']] = 0;}
 if(is.null(opt[['n.cells.cutoff']])){opt[['n.cells.cutoff']] = 2;}
+if(is.null(opt[['n.strata.cutoff']])){opt[['n.strata.cutoff']] = 1;}
 if(is.null(opt[['strat.factor']])){opt[['strat.factor']] = 'nostrat';}
 if(is.null(opt[['filter.bool']])){opt[['filter.bool']] = TRUE;}
 if(is.null(opt[['plot.bool']])){opt[['plot.bool']] = TRUE;}
@@ -74,4 +77,4 @@ source(file.path(opt[['lib.dir']], 'main.lib.R'), chdir = TRUE)
 ###
 #Execute
 ###
-gene.filter(opt[['meta.file']], opt[['rpkm.file']], opt[['rpkm.postqc.file']], opt[['gene2nsamples.pdf']], opt[['strat.factor']], opt[['log.rpkm.cutoff']], opt[['n.cells.cutoff']], opt[['filter.bool']], opt[['plot.bool']])
+gene.filter(opt[['meta.file']], opt[['rpkm.file']], opt[['rpkm.postqc.file']], opt[['gene2nsamples.pdf']], opt[['strat.factor']], opt[['log.rpkm.cutoff']], opt[['n.cells.cutoff']], opt[['n.strata.cutoff']], opt[['filter.bool']], opt[['plot.bool']])

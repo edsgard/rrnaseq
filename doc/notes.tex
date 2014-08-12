@@ -3,6 +3,7 @@
 TODO
 ------------------
 *Add heatmap of rows and cols (see pca_heat_hclust for example code)
+*Change to actual number of added transcript instead of concentration in ERCC plots. Also do linear reg to estimate number of mol per RPKM.
 *Handle empty rows in qc.rds if application of sample_filter between filter settings
 *subset (_genes, _samples)
 *Improve as R API (input and return data-structures rather than I/O files)
@@ -17,58 +18,8 @@ IDEAS
 
 
 
-UPDATES
+MISC
 -------------------
-
-v1.0.4
-*Fix cor.res.list updates such that order of program calls doesnt matter (sampledist_boxplot first or not)
-*Add error-check to mapstats, checking if sample names differ between meta.rds and rpkm.rds
-
-v1.0.3
-*Bug in updating qc.mat (not resetting the column to zeroes if rerunning and updating qc.mat)
-
-v1.0.2
-*Reran test
-
-v1.0.1
-*Minor update of README
-*Added -f (frac-adjustment) to ercc call in rqc
-*Added -e sampledist.cor.res.rds to calls in rqc
-
-v1.0.0
-*ercc: filter all data-structures on filtered samples
-*read.rpkm: get vector of ERCC ids from all rpkm files instead of only the first file
-*gene2nsamples: subset on intersection of meta.mat and rpkm samples
-*hclust: increased pdf size
-*Updated README (missing getopt package in install instruction)
-*Updated .gitignore
-
-v0.1.4
-*sampledist.heatmap, sampldist.boxplot, sample.hclust: rm constant columns before correlation calculation, otherwise error is thrown.
-*Updated README
-*Updated -h info
-*rqc: Added several pca calls with different number of pcs to rqc
-
-v0.1.3
-*Write qc.tab and not only qc.rds
-*pca: Fixed output file-name bug when substituting string 'pca' if two or one PCs.
-*sample_heatmap, sample_boxplot, sample_hclust: Added option to save the calculated sample-distance objects (cor.res, col.clust) since for large datasets it takes very long time to calculate.
-*mapstats: Work-around for an R bug: Small cex values are silenced using pdf device on OS X. Solution: Increased the pdf size.
-*sampledist_boxplot: Changed default of max.cor.cutoff to 0.2.
-*get_expr: Add option to set the sample column name in meta.file where sample names will be matched against the rpkmforgenes-file sample names
-*get.expr: Add option which reads file-names from a file
-*get.meta: Ignore lines with "no data for" (fill = TRUE)
-*get.meta: Set sample names for 'no data for' rows output by make_summary_starlog.sh
-
-v0.1.2
-*get_expr: stripped '_unique.bam' from sample column names in read.rpkm
-
-v0.1.1
-*README updates
-
-v0.1.0
-*Tag and "install" the tag on rna (globally)
-*Create test dataset which one can run
 
 #Check mapstats for the first files with enough reads and that have ERCC:
 #H1007_506_701, H1008_506_702, H1009_506_703

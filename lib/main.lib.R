@@ -343,7 +343,7 @@ sample.expr.dhist <- function(meta.file, rpkm.file, sampledist.pdf, strat.factor
     dev.off()
 }
 
-gene.filter <- function(meta.file, rpkm.file, rpkm.postqc.file, gene2nsamples.pdf, strat.factor, log.rpkm.cutoff, n.cells.cutoff, filter.bool, plot.bool){
+gene.filter <- function(meta.file, rpkm.file, rpkm.postqc.file, gene2nsamples.pdf, strat.factor, log.rpkm.cutoff, n.cells.cutoff, n.strata.cutoff, filter.bool, plot.bool){
 
     
     ###
@@ -377,7 +377,7 @@ gene.filter <- function(meta.file, rpkm.file, rpkm.postqc.file, gene2nsamples.pd
     #Filter genes
     if(filter.bool){
         print(nrow(rpkm))
-        rpkm = gene2nsamples.expr.filter(rpkm, n.cells.cutoff, rpkm.cutoff, strat.factor, meta.mat)
+        rpkm = gene2nsamples.expr.filter(rpkm, n.cells.cutoff, rpkm.cutoff, strat.factor, meta.mat, n.strata.cutoff)
         print(nrow(rpkm))
 
         #Dump

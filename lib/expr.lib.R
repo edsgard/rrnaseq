@@ -43,15 +43,18 @@ plot.heatmap.sample <- function(cor.res, col.clust, meta.mat, strat.factor, ...)
 
 }
 
-gene2nsamples.expr.filter <- function(rpkm, n.cells.cutoff, rpkm.cutoff, strat.factor, meta.mat){
+gene2nsamples.expr.filter <- function(rpkm, n.cells.cutoff, rpkm.cutoff, strat.factor, meta.mat, n.strata.cutoff = 1){
         
-    #number of cells with expression per stratum
+    #number of samples (cells) with expression per stratum
     gene2nsamples.expr.list = gene2nsamples(rpkm, meta.mat, strat.factor, rpkm.cutoff)
 
     n.strata = length(gene2nsamples.expr.list)
     fail.genes.list = lapply(gene2nsamples.expr.list, function(jstratum.gene2nsamples, n.cells.cutoff){names(jstratum.gene2nsamples)[which(jstratum.gene2nsamples < n.cells.cutoff)]}, n.cells.cutoff = n.cells.cutoff)
+
+    #get genes that passed the cutoff in n strata
     fail.genes2nstrata = table(unlist(fail.genes.list))
-    fail.genes = names(fail.genes2nstrata)[which(fail.genes2nstrata == n.strata)]
+    pass.genes2nstrata = n.strata - fail.genes2nstrata
+    fail.genes = names(pass.genes2nstrata)[which(pass.genes2nstrata < n.strata.cutoff)]
     pass.genes = setdiff(rownames(rpkm), fail.genes)
     
     rpkm = rpkm[pass.genes, ]
@@ -111,7 +114,7 @@ gene2nsamples <- function(rpkm, meta.mat, strat.factor, rpkm.cutoff){
     }else{
         stratum2id = tapply(meta.mat[, 'id'], meta.mat[, strat.factor], unique)
     }
-    gene2nsamples.expr.list = lapply(stratum2id, function(cells, rpkm, rpkm.cutoff){rpkm = rpkm[, cells]; gene2fracsamples.expr = apply(rpkm, 1, function(jgene.rpkm, rpkm.cutoff){length(which(jgene.rpkm > rpkm.cutoff));}, rpkm.cutoff = rpkm.cutoff)}, rpkm = rpkm, rpkm.cutoff = rpkm.cutoff)
+    gene2nsamples.expr.list = lapply(stratum2id, function(cells, rpkm, rpkm.cutoff){rpkm = rpkm[, cells]; gene2nsamples.expr = apply(rpkm, 1, function(jgene.rpkm, rpkm.cutoff){length(which(jgene.rpkm > rpkm.cutoff));}, rpkm.cutoff = rpkm.cutoff)}, rpkm = rpkm, rpkm.cutoff = rpkm.cutoff)
 
     return(gene2nsamples.expr.list)
 }
