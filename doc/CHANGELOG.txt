@@ -1,5 +1,7 @@
 
 
+v1.0.6
+*Bugfix: qc.col never set in pca filtering
 
 v1.0.5
 *gene_filter: Added argument for the number of strata in which a gene need to pass the n.samples filter

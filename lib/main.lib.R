@@ -914,7 +914,9 @@ pca <- function(meta.file, rpkm.file, pca.pdf, plot.comp, log.fcn, pc.cutoff, fi
         #Filter based on a single PC
         ###
         if(filter.bool){
-                        
+
+            qc.col = pc
+            
             #Get fail.samples
             if(gt.bool == TRUE){
                 pc.fail.samples = rownames(pca.basis)[which(pca.basis[, pc] >= pc.cutoff)]
