@@ -48,7 +48,7 @@ done
 #qcdir=datadir (qc.rds)
 
 #Default values
-b=100
+b=10
 pc_comp='1,2,3'
 scatter_samples='1,2,3'
 filter_cols='n.genes.expr,spearman.cor'
@@ -139,8 +139,9 @@ echo '#########' >>rqc.sh
 echo '#Find genes with higher variance than the technical variance (ERCC)' >>rqc.sh
 echo var_genes_brennecke -m meta.rds -c counts.postqc.rds -e ercc.counts.rds -o ${brenneckedir} >>rqc.sh
 
-echo '#Heatmap of most variable genes found by var_genes_brennecke' >>rqc.sh
-#echo heatmap -i rpkm.rds -r topgenes.txt -o ${brenneckedir}/pdf/topgenes.heatmap.pdf
+printf '\n#Heatmap of most variable genes found by var_genes_brennecke\n' >>rqc.sh
+echo head -n100 ${brenneckedir}/rds/genes.ntop_500.txt '>'${brenneckedir}/rds/genes.ntop_100.txt >>rqc.sh
+echo heatmap -i rpkm.rds -r ${brenneckedir}/rds/genes.ntop_100.txt -o ${brenneckedir}/pdf/topgenes.heatmap.pdf >>rqc.sh
 
 
 #########

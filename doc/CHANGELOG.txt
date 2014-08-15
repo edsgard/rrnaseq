@@ -1,5 +1,8 @@
 
 
+v1.0.8
+*Test suite: rqc: Test heatmap by plotting top genes from Brennecke
+*brennecke: Sort genes by gene.var.quants column before dumping stats.mat.tab. Also dump top genes to file.
 
 v1.0.7
 +heatmap of columns and rows

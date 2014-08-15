@@ -39,7 +39,7 @@ sampledist_boxplot -m meta.rds -r rpkm.rds -o /Volumes/Data/cloud/gdrive/work/rs
 #no boostrap
 sample_hclust -m meta.rds -r rpkm.rds -o /Volumes/Data/cloud/gdrive/work/rspd/code/my/git/rrnaseq/test/rqc/pdf/sampledist/sample.hclust.pdf -b 0 -e sampledist.cor.res.rds
 #with bootstrap
-sample_hclust -m meta.rds -r rpkm.rds -o /Volumes/Data/cloud/gdrive/work/rspd/code/my/git/rrnaseq/test/rqc/pdf/sampledist/sample.hclust.b_100.pdf -b 100
+sample_hclust -m meta.rds -r rpkm.rds -o /Volumes/Data/cloud/gdrive/work/rspd/code/my/git/rrnaseq/test/rqc/pdf/sampledist/sample.hclust.b_10.pdf -b 10
 
 #PCA
 pca -m meta.rds -r rpkm.rds -o /Volumes/Data/cloud/gdrive/work/rspd/code/my/git/rrnaseq/test/rqc/pdf/pca/pca.pdf -c 1,2,3
@@ -75,3 +75,7 @@ ercc -m meta.rds -r rpkm.rds -c counts.rds -e ercc.rpkm.rds -d ercc.counts.rds -
 #########
 #Find genes with higher variance than the technical variance (ERCC)
 var_genes_brennecke -m meta.rds -c counts.postqc.rds -e ercc.counts.rds -o /Volumes/Data/cloud/gdrive/work/rspd/code/my/git/rrnaseq/test/rqc/diffexp/brennecke
+
+#Heatmap of most variable genes found by var_genes_brennecke
+head -n100 /Volumes/Data/cloud/gdrive/work/rspd/code/my/git/rrnaseq/test/rqc/diffexp/brennecke/rds/genes.ntop_500.txt >/Volumes/Data/cloud/gdrive/work/rspd/code/my/git/rrnaseq/test/rqc/diffexp/brennecke/rds/genes.ntop_100.txt
+heatmap -i rpkm.rds -r /Volumes/Data/cloud/gdrive/work/rspd/code/my/git/rrnaseq/test/rqc/diffexp/brennecke/rds/genes.ntop_100.txt -o /Volumes/Data/cloud/gdrive/work/rspd/code/my/git/rrnaseq/test/rqc/diffexp/brennecke/pdf/topgenes.heatmap.pdf

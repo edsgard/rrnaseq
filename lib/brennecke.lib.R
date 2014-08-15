@@ -224,11 +224,11 @@ var.genes.brennecke <- function(count.file, ercc.count.file, meta.file, out.dir,
     ercc.fit.pdf = file.path(out.dir, 'pdf', 'ercc.fit.pdf')
     cv2vsmean.pdf = file.path(out.dir, 'pdf', 'cv2vsmean.pdf')
 
-    #RDS out
+    #Data files out
     stats.list.rds = file.path(out.dir, 'rds', 'stats.list.rds')
     stats.mat.rds = file.path(out.dir, 'rds', 'stats.mat.rds')
     stats.mat.tab = file.path(out.dir, 'rds', 'stats.mat.tab')
-
+    top.genes.file = file.path(out.dir, 'rds', paste('genes.ntop_', params[['n.top']], '.txt', sep = ''))
 
     #Create output dirs
     dir.create(dirname(ercc.fit.pdf), recursive = TRUE, showWarnings = FALSE)
@@ -377,12 +377,20 @@ var.genes.brennecke <- function(count.file, ercc.count.file, meta.file, out.dir,
         all.stats.mat = merge(all.stats.mat, j.real.stats, by.x = 'gene', by.y = 'row.names', stringsAsFactors = FALSE)
     }
 
+    #sort results on test-statistica (already done in get.real.stats, but the all.stats.mat is not since merge was done)
+    real.stats.list = lapply(real.stats.list, function(x){x[order(x[, 'gene.var.quants'], decreasing = TRUE), ]})
+    all.stats.mat = all.stats.mat[order(all.stats.mat[, 'nostrat.gene.var.quants'], decreasing = TRUE), ]
+
+    #get top genes
+    top.genes = all.stats.mat[1:params[['n.top']], 'gene']
+    
     #Dump
     saveRDS(real.stats.list, file = stats.list.rds)
     saveRDS(all.stats.mat, file = stats.mat.rds)    
     write.table(all.stats.mat, quote = FALSE, row.names = FALSE, sep = '\t', file = stats.mat.tab)
+    write.table(top.genes, quote = FALSE, row.names = FALSE, col.names = FALSE, file = top.genes.file)
 
-    
+                
     ############
     #Plot
     ############    
