@@ -15,14 +15,15 @@ scriptPath = dirname(sub("--file=", "", argv[grep("--file", argv)]))
 argv = commandArgs(trailingOnly = T)
 
 spec = matrix(c(
-  'meta.file', 'm', 1, 'character',
   'rpkm.file', 'r', 1, 'character',
   'sample2ngenes.pdf', 'o', 1, 'character',
+  'meta.file', 'm', 1, 'character',
   'qc.meta.file', 'q', 1, 'character',
   'log.rpkm.cutoff', 'c', 1, 'double',
   'n.genes.cutoff', 'n', 1, 'numeric',
   'filter.bool', 'f', 1, 'logical',
   'plot.bool', 'p', 1, 'logical',
+  'meta.add', 'a', 1, 'logical',
   'lib.dir', 'l', 1, 'character',
   'help', 'h', 0, 'logical'
 ), byrow=TRUE, ncol=4);
@@ -31,14 +32,15 @@ opt = getopt(spec)
 usage <- function(spec){
   cat(getopt(spec, command = 'sample2ngenes_expr', usage=TRUE));
   cat(sprintf("Plot and set filter of number of expressed genes per sample\n"))
-  cat(sprintf(" -m meta.file\n\tInput file in rds-format, containing mapping statistics (output by the program get_meta).\n"))
   cat(sprintf(" -r rpkm.file\n\tInput file in rds-format, containing normalized read counts for all samples and features (output by the program get_expr).\n"))
   cat(sprintf(" -o sample2ngenes.pdf\n\tOutput file to which the plot is printed. Default: sample2ngenes.dens.pdf\n"))
+  cat(sprintf(" -m meta.file\n\tInput file in rds-format, containing mapping statistics (output by the program get_meta).\n"))
   cat(sprintf(" -q qc.meta.file\n\tOutput file in rds-format to which the qc-failed samples are stored. If the file already exists a column is added and if the column already exists (n.genes.expr) it is updated. Default: qc.meta.rds\n"))
   cat(sprintf(" -c log.rpkm.cutoff\n\tExpression cutoff in log10-scale used to determine if a gene is expressed or not. Default: 0\n"))
   cat(sprintf(" -n n.genes.cutoff\n\tNumber of genes expressed per sample, where samples with less expressed genes are flagged. Default: 1000\n"))
   cat(sprintf(" -f filter\n\tSave qc-failed samples or not to qc.meta.file (option -d). Allowed values: {TRUE, FALSE}. Default: TRUE\n"))
   cat(sprintf(" -p plot\n\tPlot smoothed histogram of the number of expressed genes per sample. Allowed values: {TRUE, FALSE}. Default: TRUE\n"))
+  cat(sprintf(" -a meta.add\n\tAdd factor (column) to sample meta information matrix (meta.file) containing the number of expressed genes. Allowed values: {TRUE, FALSE}. Default: TRUE\n"))
   cat(sprintf(" -l lib.dir\n\tLibrary directory with required R functions. Default: A subdir residing at '../lib' relative to where this program was executed from.\n\n"))
   q(status=1);
 }
@@ -49,17 +51,23 @@ if(!is.null(opt[['help']])){
 }
 
 #Error check that all required options were set
-if(is.null(opt[['meta.file']])){warning('Error: "m" is a required option'); usage(spec);}
 if(is.null(opt[['rpkm.file']])){warning('Error: "r" is a required option'); usage(spec);}
 
 #Set defaults for optional options
 if(is.null(opt[['sample2ngenes.pdf']])){opt[['sample2ngenes.pdf']] = 'sample2ngenes.dens.pdf';}
+if(is.null(opt[['meta.file']])){opt[['meta.file']] = NA}
 if(is.null(opt[['qc.meta.file']])){opt[['qc.meta.file']] = 'qc.meta.rds';}
 if(is.null(opt[['log.rpkm.cutoff']])){opt[['log.rpkm.cutoff']] = 0;}
 if(is.null(opt[['n.genes.cutoff']])){opt[['n.genes.cutoff']] = 1000;}
 if(is.null(opt[['filter.bool']])){opt[['filter.bool']] = TRUE;}
 if(is.null(opt[['plot.bool']])){opt[['plot.bool']] = TRUE;}
+if(is.null(opt[['meta.add']])){opt[['meta.add']] = TRUE;}
 if(is.null(opt[['lib.dir']])){opt[['lib.dir']] = file.path(scriptPath, '../lib');}
+
+#Error check
+if(opt[['filter.bool']] | opt[['meta.add']]){
+    if(is.null(opt[['meta.file']])){warning('Error: "m" is a required option if "-f" or "-a" is set to TRUE'); usage(spec);}
+}
 
 
 ###
@@ -70,6 +78,37 @@ source(file.path(opt[['lib.dir']], 'main.lib.R'), chdir = TRUE)
 
 
 ###
+#Load data
+###
+rpkm = readRDS(opt[['rpkm.file']])
+meta.mat = readRDS(opt[['meta.file']])
+
+if(opt[['filter.bool']]){
+    #Get qc.meta.mat, create new data-structure if file doesn't exist
+    qc.meta.mat = get.qc.df(opt[['qc.meta.file']], meta.mat)        
+}else{
+    qc.meta.mat = NA
+}
+
+
+###
 #Execute
 ###
-sample2ngenes.expr(opt[['meta.file']], opt[['rpkm.file']], opt[['sample2ngenes.pdf']], opt[['qc.meta.file']], opt[['log.rpkm.cutoff']], opt[['n.genes.cutoff']], opt[['filter.bool']], opt[['plot.bool']])
+res.list = sample2ngenes.expr(rpkm, meta.mat, opt[['sample2ngenes.pdf']], opt[['log.rpkm.cutoff']], opt[['n.genes.cutoff']], qc.meta.mat, opt[['filter.bool']], opt[['plot.bool']], opt[['meta.add']])
+
+
+###
+#Dump
+###
+if(opt[['filter.bool']]){
+
+    qc.meta.mat = res.list[['qc.meta.mat']]    
+    qc.meta.tab.file = paste(sub('\\.rds$', '', opt[['qc.meta.file']]), 'tab', sep = '.')
+    saveRDS(qc.meta.mat, file = opt[['qc.meta.file']])
+    write.table(qc.meta.mat, quote = F, col.names = NA, sep = '\t', file = qc.meta.tab.file)
+}
+
+if(opt[['meta.add']]){
+    meta.mat = res.list[['meta.mat']]
+    saveRDS(meta.mat, file = opt[['meta.file']])
+}

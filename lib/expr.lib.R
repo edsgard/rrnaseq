@@ -57,9 +57,9 @@ rseq.hclust <- function(rpkm, cor.meth, cor.res.list, store.col = 'col'){
 }
 
 
-add.qc.col <- function(qc.meta.mat, qc.col){
+add.qc.col <- function(qc.meta.mat, qc.col, def.val = 0){
     if(length(which(colnames(qc.meta.mat) == qc.col)) == 0){
-        new.qc.col = rep(0, nrow(qc.meta.mat))
+        new.qc.col = rep(def.val, nrow(qc.meta.mat))
         qc.meta.mat = cbind(qc.meta.mat, new.qc.col)
         colnames(qc.meta.mat)[ncol(qc.meta.mat)] = qc.col
     }
@@ -448,24 +448,49 @@ meta.add.colormaps <- function(meta.mat){
     return(meta.mat)
 }
 
-add.factor.color <- function(meta.mat, factor){
+add.factor.color <- function(meta.mat, factor, discrete = TRUE){
     library('RColorBrewer')
     
-    factors = sort(unique(meta.mat[, factor]))
-    n.factors = length(factors)
-    if(n.factors < 3){
-        factor2color.map = brewer.pal(3, 'Dark2')[1:n.factors]
-    }else{
-        if(n.factors > 8){
-            factor2color.map = colorRampPalette(brewer.pal(8, 'Dark2'))(n.factors)
+    if(discrete){
+        factors = sort(unique(meta.mat[, factor]))
+        n.factors = length(factors)
+        if(n.factors < 3){
+            factor2color.map = brewer.pal(3, 'Dark2')[1:n.factors]
         }else{
-            factor2color.map = brewer.pal(n.factors, 'Dark2')[1:n.factors]
+            if(n.factors > 8){
+                factor2color.map = colorRampPalette(brewer.pal(8, 'Dark2'))(n.factors)
+            }else{
+                factor2color.map = brewer.pal(n.factors, 'Dark2')[1:n.factors]
+            }
         }
+        names(factor2color.map) = factors
+        factor.color = factor2color.map[as.character(meta.mat[, factor])]
+    }else{ #continuous
+
+        #color palette
+        n.cols = 100
+        col.pal = colorRampPalette(brewer.pal(9, "Reds"))(n.cols)
+        
+        #scale the range to 1:n.cols as to get the index in the col.pal
+        vals = meta.mat[, factor]
+        min.val = min(vals, na.rm = TRUE)
+        max.val = max(vals, na.rm = TRUE)
+        range.val = max.val - min.val
+        rescaled = (vals - min.val) / range.val
+        col.pal.ind = round((rescaled * (n.cols - 1)) + 1)
+
+        #get colors
+        factor.color = col.pal[col.pal.ind]
     }
-    names(factor2color.map) = factors
-    factor.color = factor2color.map[as.character(meta.mat[, factor])]
-    meta.mat = cbind(meta.mat, factor.color, stringsAsFactors = FALSE)
-    colnames(meta.mat)[ncol(meta.mat)] = paste(factor, 'color', sep = '.')
+
+    #add column to meta.mat if it doesn't already exist
+    factor.color.name = paste(factor, 'color', sep = '.')
+    if(length(which(colnames(meta.mat) == factor.color.name)) != 0){
+        meta.mat[, factor.color.name] = factor.color
+    }else{
+        meta.mat = cbind(meta.mat, factor.color, stringsAsFactors = FALSE)
+        colnames(meta.mat)[ncol(meta.mat)] = factor.color.name
+    }
 
     return(meta.mat)
 }

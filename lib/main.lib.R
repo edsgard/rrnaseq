@@ -385,23 +385,14 @@ gene.filter <- function(meta.file, rpkm.file, rpkm.postqc.file, gene2nsamples.pd
     }
 }
 
-sample2ngenes.expr <- function(meta.file, rpkm.file, sample2ngenes.pdf, qc.meta.file, log.rpkm.cutoff, n.genes.cutoff, filter.bool, plot.bool){
+sample2ngenes.expr <- function(rpkm, meta.mat, sample2ngenes.pdf, log.rpkm.cutoff, n.genes.cutoff, qc.meta.mat, filter.bool, plot.bool, meta.add){
 
 
     library('RColorBrewer')
 
     #Params
     rpkm.cutoff = 10^(log.rpkm.cutoff)
-    qc.meta.tab.file = paste(sub('\\.rds$', '', qc.meta.file), 'tab', sep = '.')
     
-    ###
-    #Load data
-    ###
-    rpkm = readRDS(rpkm.file)
-    meta.mat = readRDS(meta.file)
-    dim(rpkm) #Refseq: 24249 x n.samples
-    dim(meta.mat) #n.samples x n.cols
-
     
     ####################
     #Sample QC: Sample2n.genes.expr
@@ -433,9 +424,6 @@ sample2ngenes.expr <- function(meta.file, rpkm.file, sample2ngenes.pdf, qc.meta.
         fail.samples = names(fail.ind)    
         length(fail.samples) #
         #cat(fail.samples)
-
-        #Get qc.meta.mat, create new data-structure if file doesn't exist
-        qc.meta.mat = get.qc.df(qc.meta.file, meta.mat)        
         
         #Create new column if it doesn't exist
         qc.meta.mat = add.qc.col(qc.meta.mat, qc.col)
@@ -443,12 +431,23 @@ sample2ngenes.expr <- function(meta.file, rpkm.file, sample2ngenes.pdf, qc.meta.
         #Set filter
         qc.meta.mat[, qc.col] = 0
         qc.meta.mat[fail.samples, qc.col] = 1
+    }
 
-        #Dump
-        saveRDS(qc.meta.mat, file = qc.meta.file)
-        write.table(qc.meta.mat, quote = F, col.names = NA, sep = '\t', file = qc.meta.tab.file)
+    #add n.gene.expr factor to meta.mat
+    if(meta.add){
+        
+        #add column if it doesn't already exist
+        meta.mat = add.qc.col(meta.mat, 'n.genes.expr', def.val = NA)
+        
+        #set values
+        meta.mat[names(n.genes.expr), 'n.genes.expr'] = n.genes.expr        
+        
+        #Add colormap cols
+        meta.mat = add.factor.color(meta.mat, 'n.genes.expr', discrete = FALSE)
     }
     
+    res.list = list(n.genes.expr = n.genes.expr, qc.meta.mat = qc.meta.mat, meta.mat = meta.mat)
+    return(res.list)
 }
 
 sampledist.heatmap <- function(meta.file, rpkm.file, sample.heatmap.pdf, strat.factor, cor.meth, cex.sample, cor.res.list = NA, ...){
