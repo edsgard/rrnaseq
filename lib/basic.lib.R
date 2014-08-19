@@ -1,4 +1,67 @@
 
+bigcorPar <- function(MAT, nblocks = 10, verbose = TRUE, ncore=20, ...){
+#https://gist.github.com/bobthecat/5024079
+    
+  library(ff, quietly = TRUE)
+  library(doMC)
+  
+  if(ncore=="all"){
+      ncore = multicore:::detectCores()
+      registerDoMC(cores = ncore)
+  } else{
+      registerDoMC(cores = ncore)
+  }
+  
+
+  #add dummy cols such that modulus nblocks == 0
+  NCOL.predummy = ncol(MAT)
+  if (NCOL.predummy %% nblocks != 0){
+      n.dummy = nblocks - (NCOL.predummy %% nblocks)
+      dummy.mat = matrix(NA, nrow = nrow(MAT), ncol = n.dummy)
+      MAT = cbind(MAT, dummy.mat)
+  }
+  
+  NCOL = ncol(MAT)
+
+  ## preallocate square matrix of dimension
+  ## ncol(MAT) in 'ff' single format
+  corMAT = ff(vmode = "single", dim = c(NCOL, NCOL))
+ 
+  ## split column numbers into 'nblocks' groups.
+  #NB: requires that NCOL %% nblocks == 0
+  SPLIT = split(1:NCOL, rep(1:nblocks, each = NCOL / nblocks))
+ 
+	## create all unique combinations of blocks
+	COMBS = expand.grid(1:length(SPLIT), 1:length(SPLIT))
+	COMBS = t(apply(COMBS, 1, sort))
+	COMBS = unique(COMBS)
+ 
+	## iterate through each block combination, calculate correlation matrix
+	## between blocks and store them in the preallocated matrix on both
+	## symmetric sides of the diagonal
+	results = foreach(i = 1:nrow(COMBS)) %dopar% {
+		COMB = COMBS[i, ]
+		G1 = SPLIT[[COMB[1]]]
+		G2 = SPLIT[[COMB[2]]]
+		if (verbose) cat("Block", COMB[1], "with Block", COMB[2], "\n")
+		flush.console()
+		COR = cor(MAT[, G1], MAT[, G2], ...)
+		corMAT[G1, G2] = COR
+		corMAT[G2, G1] = t(COR)
+		COR = NULL
+	}
+ 
+	gc()
+
+  #remove dummy cols
+  corMAT = corMAT[1:NCOL.predummy, 1:NCOL.predummy]
+
+  #set row- and colnames
+  colnames(corMAT) = colnames(MAT)
+  rownames(corMAT) = colnames(MAT)
+  
+  return(corMAT)
+}
 
 rm.const.vec <- function(data.mat, col.rm = TRUE, row.rm = TRUE){
 
