@@ -525,8 +525,8 @@ sampledist.heatmap <- function(meta.file, rpkm.file, sample.heatmap.pdf, strat.f
     
     #Plot
     heatmap.pdf = sub('heatmap', paste('heatmap.', cor.meth, sep = ''), sample.heatmap.pdf)
-    pdf(file = heatmap.pdf, width = 10, height = 10, ...)
-    plot.heatmap.sample(col.cor, col.clust, meta.mat, strat.factor, cexRow = cex.sample, cexCol = cex.sample)
+    pdf(file = heatmap.pdf, width = 10, height = 10)
+    plot.heatmap.sample(col.cor, col.clust, meta.mat, strat.factor, cexRow = cex.sample, cexCol = cex.sample, ...)
     dev.off()
 
 

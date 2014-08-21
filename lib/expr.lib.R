@@ -86,16 +86,18 @@ plot.heatmap.sample <- function(cor.res, col.clust, meta.mat, strat.factor, ...)
     library('gplots')
     
     #colormaps
-    strat.factor.col = paste(strat.factor, '.color', sep = '')
-    stratum.col = as.character(meta.mat[colnames(cor.res), strat.factor.col])
-    col.pa = greenred(100) #alt: maPalette{marray)
-    #col.pa = colorRampPalette(brewer.pal(9, "Blues")[4:9])(100)
-    strat.factor2color.map = unique(meta.mat[, c(strat.factor, strat.factor.col)])
+    if(0){
+        strat.factor.col = paste(strat.factor, '.color', sep = '')
+        stratum.col = as.character(meta.mat[colnames(cor.res), strat.factor.col])
+        col.pa = greenred(100) #alt: maPalette{marray)
+        #col.pa = colorRampPalette(brewer.pal(9, "Blues")[4:9])(100)
+        strat.factor2color.map = unique(meta.mat[, c(strat.factor, strat.factor.col)])
+    }
     
     ###
     #Plot
     ###
-    heatmap.2(cor.res, Rowv = as.dendrogram(col.clust), Colv = as.dendrogram(col.clust), col = col.pa, trace = 'none', symm = TRUE, ColSideColors = stratum.col, ...)
+    heatmap.2(cor.res, Rowv = as.dendrogram(col.clust), Colv = as.dendrogram(col.clust), trace = 'none', symm = TRUE, ColSideColors = stratum.col, ...)
     legend('topright', legend = strat.factor2color.map[, strat.factor], col = strat.factor2color.map[, strat.factor.col], lty = 1)
 
 }

@@ -1,5 +1,5 @@
 
-bigcorPar <- function(MAT, nblocks = 10, verbose = TRUE, ncore=20, ...){
+bigcor.par <- function(MAT, nblocks = 10, verbose = TRUE, ncore=20, yMAT = NA, ...){
 #https://gist.github.com/bobthecat/5024079
     
   library(ff, quietly = TRUE)
@@ -23,6 +23,23 @@ bigcorPar <- function(MAT, nblocks = 10, verbose = TRUE, ncore=20, ...){
   
   NCOL = ncol(MAT)
 
+  if(length(yMAT) == 1){
+      if(is.na(yMAT)){
+          yMAT = MAT
+          singlemat = TRUE
+      }
+  }else{
+      singlemat = FALSE
+      y.ncol.predummy = ncol(yMAT)
+      if(y.ncol.predummy != NCOL.predummy){
+          stop('number of columns of MAT is not equal to that of yMAT')
+      }else{
+          if(NCOL.predummy %% nblocks != 0){
+              yMAT = cbind(yMAT, dummy.mat)
+          }
+      }
+  }
+  
   ## preallocate square matrix of dimension
   ## ncol(MAT) in 'ff' single format
   corMAT = ff(vmode = "single", dim = c(NCOL, NCOL))
@@ -45,9 +62,14 @@ bigcorPar <- function(MAT, nblocks = 10, verbose = TRUE, ncore=20, ...){
 		G2 = SPLIT[[COMB[2]]]
 		if (verbose) cat("Block", COMB[1], "with Block", COMB[2], "\n")
 		flush.console()
-		COR = cor(MAT[, G1], MAT[, G2], ...)
+		COR = cor(MAT[, G1], yMAT[, G2], ...)
 		corMAT[G1, G2] = COR
-		corMAT[G2, G1] = t(COR)
+                if(singlemat){ #cor-mat is then symmetric
+                    corMAT[G2, G1] = t(COR)
+                }else{                
+                    COR = cor(MAT[, G2], yMAT[, G1], ...)
+                    corMAT[G2, G1] = COR
+                }
 		COR = NULL
 	}
  
@@ -55,10 +77,10 @@ bigcorPar <- function(MAT, nblocks = 10, verbose = TRUE, ncore=20, ...){
 
   #remove dummy cols
   corMAT = corMAT[1:NCOL.predummy, 1:NCOL.predummy]
-
+  
   #set row- and colnames
-  colnames(corMAT) = colnames(MAT)
-  rownames(corMAT) = colnames(MAT)
+#  colnames(corMAT) = colnames(MAT)
+#  rownames(corMAT) = colnames(MAT)
   
   return(corMAT)
 }
