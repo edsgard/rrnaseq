@@ -450,7 +450,7 @@ sample2ngenes.expr <- function(rpkm, meta.mat, sample2ngenes.pdf, log.rpkm.cutof
     return(res.list)
 }
 
-sampledist.heatmap <- function(meta.file, rpkm.file, sample.heatmap.pdf, strat.factor, cor.meth, cex.sample, cor.res.list = NA, ...){
+sampledist.heatmap <- function(meta.file, rpkm.file, sample.heatmap.pdf, strat.factor, cor.meth, cex.sample, cor.res.list = NA, ncores = 1, nblocks = 1, ...){
 
     library('RColorBrewer')
 
@@ -480,7 +480,7 @@ sampledist.heatmap <- function(meta.file, rpkm.file, sample.heatmap.pdf, strat.f
         }
         
         #Pairwise dist btw samples
-        col.cor = cor(rpkm, use="pairwise.complete.obs", method = cor.meth)
+        col.cor = bigcor.par(rpkm, use="pairwise.complete.obs", method = cor.meth, ncores = ncores, nblocks = nblocks)
     
         #get dist and hclust 
         col.dist.mat = as.dist(((col.cor * -1) + 1) / 2)
@@ -512,7 +512,7 @@ sampledist.heatmap <- function(meta.file, rpkm.file, sample.heatmap.pdf, strat.f
             }
         
             #Pairwise dist btw samples
-            col.cor = cor(rpkm, use="pairwise.complete.obs", method = cor.meth)
+            col.cor = bigcor.par(rpkm, use="pairwise.complete.obs", method = cor.meth, ncores = ncores, nblocks = nblocks)
 
             #get dist and hclust 
             col.dist.mat = as.dist(((col.cor * -1) + 1) / 2)
@@ -534,7 +534,7 @@ sampledist.heatmap <- function(meta.file, rpkm.file, sample.heatmap.pdf, strat.f
 }
 
 
-sampledist.boxplot <- function(meta.file, rpkm.file, sample.cor.pdf, qc.meta.file, cor.meth, max.cor.cutoff, cex.axis, filter.bool, plot.bool, cor.res.list = NA){
+sampledist.boxplot <- function(meta.file, rpkm.file, sample.cor.pdf, qc.meta.file, cor.meth, max.cor.cutoff, cex.axis, filter.bool, plot.bool, cor.res.list = NA, ...){
 
 
     library('RColorBrewer')
@@ -571,7 +571,7 @@ sampledist.boxplot <- function(meta.file, rpkm.file, sample.cor.pdf, qc.meta.fil
         }
 
         #Pairwise dist btw samples
-        col.cor = cor(rpkm, use="pairwise.complete.obs", method = cor.meth)
+        col.cor = bigcor.par(rpkm, use="pairwise.complete.obs", method = cor.meth, ...)
 
         #store result
         cor.res.list = list(col.cor = col.cor)
@@ -589,7 +589,7 @@ sampledist.boxplot <- function(meta.file, rpkm.file, sample.cor.pdf, qc.meta.fil
             }
 
             #Pairwise dist btw samples
-            col.cor = cor(rpkm, use="pairwise.complete.obs", method = cor.meth)
+            col.cor = bigcor.par(rpkm, use="pairwise.complete.obs", method = cor.meth, ...)
 
             #store result
             cor.res.list = c(cor.res.list, list(col.cor = col.cor))
@@ -649,7 +649,7 @@ sampledist.boxplot <- function(meta.file, rpkm.file, sample.cor.pdf, qc.meta.fil
     return(cor.res.list)
 }
 
-sample.hclust <- function(meta.file, rpkm.file, sample.hclust.pdf, cor.meth, n.boot, strat.factor, ind.factor, cex, cor.res.list = NA){
+sample.hclust <- function(meta.file, rpkm.file, sample.hclust.pdf, cor.meth, n.boot, strat.factor, ind.factor, cex, cor.res.list = NA, ...){
 
 
     library('RColorBrewer')
@@ -696,7 +696,7 @@ sample.hclust <- function(meta.file, rpkm.file, sample.hclust.pdf, cor.meth, n.b
             }
 
             #Pairwise dist btw samples
-            col.cor = cor(rpkm, use="pairwise.complete.obs", method = cor.meth)
+            col.cor = bigcor.par(rpkm, use="pairwise.complete.obs", method = cor.meth, ...)
     
             #get dist and hclust 
             col.dist.mat = as.dist(((col.cor * -1) + 1) / 2)
@@ -729,7 +729,7 @@ sample.hclust <- function(meta.file, rpkm.file, sample.hclust.pdf, cor.meth, n.b
                 }
         
                 #Pairwise dist btw samples
-                col.cor = cor(rpkm, use="pairwise.complete.obs", method = cor.meth)
+                col.cor = bigcor.par(rpkm, use="pairwise.complete.obs", method = cor.meth, ...)
 
                 #get dist and hclust 
                 col.dist.mat = as.dist(((col.cor * -1) + 1) / 2)
@@ -980,7 +980,7 @@ scatter <- function(data.file, scatter.pdf, samples, transpose, log.fcn){
     dev.off()
 }
 
-rseq.heatmap <- function(data.mat, cor.meth = 'spearman', meta.mat = NA, strat.heat.factor = NA, log.fcn = log10, cor.res.list = NA, colorpad = FALSE, ColSideColors = NA, col.pal = NA, ...){ 
+rseq.heatmap <- function(data.mat, cor.meth = 'spearman', meta.mat = NA, strat.heat.factor = NA, log.fcn = log10, cor.res.list = NA, colorpad = FALSE, ColSideColors = NA, col.pal = NA, ncores = 1, nblocks = 1, ...){ 
 # cexRow = 0.2 #500 rows: 0.2
 # cexCol = 0.2 #500 cols: 0.2
 #Colorbars

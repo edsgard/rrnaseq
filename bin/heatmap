@@ -28,7 +28,9 @@ spec = matrix(c(
     'cex.col', 'y', 1, 'double',
     'color.pad', 'p', 0, 'logical',
     'lib.dir', 'l', 1, 'character',
-    'help', 'h', 0, 'logical'
+    'help', 'h', 0, 'logical',
+    'ncores', 'n', '1', 'integer',
+    'nblocks', 'k', '1', 'integer'
     ), byrow=TRUE, ncol=4);
 opt = getopt(spec)
 
@@ -48,7 +50,9 @@ usage <- function(spec){
   cat(sprintf(" -x cex.row\n\tRow-label text magnification factor. Default: 0.7\n"))
   cat(sprintf(" -y cex.col\n\tColumn-label text magnification factor. Default: 0.7\n"))
   cat(sprintf(" -p color.pad\n\tPad the color-map of the heatmap such that the default middle-white is narrowed.\n"))
-  cat(sprintf(" -l lib.dir\n\tLibrary directory with required R functions. Default: A subdir residing at '../lib' relative to where this program was executed from.\n\n"))
+  cat(sprintf(" -l lib.dir\n\tLibrary directory with required R functions. Default: A subdir residing at '../lib' relative to where this program was executed from.\n"))
+  cat(sprintf(" -n ncores\n\tSpecify the number of cores to run in parallel. Default = 1\n"))
+  cat(sprintf(" -k nblocks\n\tSpecify the number of blocks to run in parallel. Default = 1\n\n"))
   q(status=1);
 }
 
@@ -73,6 +77,8 @@ if(is.null(opt[['cex.row']])){opt[['cex.row']] = 0.7;}
 if(is.null(opt[['cex.col']])){opt[['cex.col']] = 0.7;}
 if(is.null(opt[['color.pad']])){opt[['color.pad']] = FALSE;}
 if(is.null(opt[['lib.dir']])){opt[['lib.dir']] = file.path(scriptPath, '../lib');}
+if(is.null(opt[['ncores']])){opt[['ncores']] = 1;}
+if(is.null(opt[['nblocks']])){opt[['nblocks']] = 1;}
 if(is.null(opt[['cor.res.file']])){
     cor.res.list = NA    
 }else{
@@ -145,7 +151,7 @@ if(!is.na(opt[['columns.file']])){
 #Plot
 ###
 pdf(file = opt[['heatmap.pdf']], width = pdf.w, height = pdf.h)
-cor.res.list = rseq.heatmap(data.mat, opt[['cor.meth']], meta.mat, opt[['strat.factor']], opt[['log.fcn']], cor.res.list, opt[['color.pad']], cexRow = opt[['cex.row']], cexCol = opt[['cex.col']], scale = opt[['scale']])
+cor.res.list = rseq.heatmap(data.mat, opt[['cor.meth']], meta.mat, opt[['strat.factor']], opt[['log.fcn']], cor.res.list, opt[['color.pad']], cexRow = opt[['cex.row']], cexCol = opt[['cex.col']], scale = opt[['scale']], ncores = opt[['ncores']], nblocks = opt[['nblocks']])
 dev.off()
 
 

@@ -7,12 +7,12 @@ source(lib.file)
 
 cor.meth = 'spearman'
 nblocks = 3
-ncore = 2
+ncores = 2
 
 #Execute
-#main(cor.meth, nblocks, ncore)
+#main(cor.meth, nblocks, ncores)
 
-main <- function(cor.meth, nblocks, ncore){
+main <- function(cor.meth, nblocks, ncores){
     
     ###
     #Test with one MAT
@@ -23,7 +23,7 @@ main <- function(cor.meth, nblocks, ncore){
     MAT = matrix(rnorm(8 * 10), nrow = 10)
 
     #big cor
-    big.res = bigcor.par(MAT, nblocks = nblocks, ncore = ncore, method = cor.meth)
+    big.res = bigcor.par(MAT, nblocks = nblocks, ncores = ncores, method = cor.meth)
 
     #original cor
     orig.res = cor(MAT, method = cor.meth)
@@ -46,7 +46,7 @@ main <- function(cor.meth, nblocks, ncore){
     MAT = matrix(rnorm(8 * 10), nrow = 10)
 
     #big cor
-    big.res = bigcor.par(MAT, nblocks = nblocks, ncore = ncore, yMAT = MAT)
+    big.res = bigcor.par(MAT, nblocks = nblocks, ncores = ncores, yMAT = MAT)
 
     #original cor
     orig.res = cor(x = MAT, y = MAT)
@@ -70,7 +70,7 @@ main <- function(cor.meth, nblocks, ncore){
     y = matrix(rnorm(8 * 10), nrow = 10)
     
     #big cor
-    big.res = bigcor.par(MAT, nblocks = nblocks, ncore = ncore, yMAT = y)
+    big.res = bigcor.par(MAT, nblocks = nblocks, ncores = ncores, yMAT = y)
 
     #original cor
     orig.res = cor(x = MAT, y = y)

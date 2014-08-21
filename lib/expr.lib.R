@@ -1,6 +1,6 @@
 
 
-rseq.hclust <- function(rpkm, cor.meth, cor.res.list, store.col = 'col'){
+rseq.hclust <- function(rpkm, cor.meth, cor.res.list, store.col = 'col', ncores = 1, nblocks = 1){
 
     cor.store.col = paste(store.col, 'cor', sep = '.')
     hclust.store.col = paste(store.col, 'hclust', sep = '.')
@@ -11,7 +11,7 @@ rseq.hclust <- function(rpkm, cor.meth, cor.res.list, store.col = 'col'){
         rpkm = rm.const.vec(rpkm, row.rm = FALSE)
         
         #Pairwise dist btw columns
-        cor.res = cor(rpkm, use="pairwise.complete.obs", method = cor.meth)
+        cor.res = bigcor.par(rpkm, use="pairwise.complete.obs", method = cor.meth, ncores = ncores, nblocks = nblocks)
     
         #get dist and hclust 
         col.dist.mat = as.dist(((cor.res * -1) + 1) / 2)
@@ -41,7 +41,7 @@ rseq.hclust <- function(rpkm, cor.meth, cor.res.list, store.col = 'col'){
             rpkm = rm.const.vec(rpkm, row.rm = FALSE)
         
             #Pairwise dist btw columns
-            cor.res = cor(rpkm, use="pairwise.complete.obs", method = cor.meth)
+            cor.res = bigcor.par(rpkm, use="pairwise.complete.obs", method = cor.meth, ncores = ncores, nblocks = nblocks)
 
             #get dist and hclust 
             col.dist.mat = as.dist(((cor.res * -1) + 1) / 2)
@@ -84,14 +84,14 @@ get.qc.df <- function(qc.meta.file, meta.mat){
 plot.heatmap.sample <- function(cor.res, col.clust, meta.mat, strat.factor, ...){
     
     library('gplots')
+    strat.factor.col = paste(strat.factor, '.color', sep = '')
+    stratum.col = as.character(meta.mat[colnames(cor.res), strat.factor.col])
+    strat.factor2color.map = unique(meta.mat[, c(strat.factor, strat.factor.col)])
     
     #colormaps
     if(0){
-        strat.factor.col = paste(strat.factor, '.color', sep = '')
-        stratum.col = as.character(meta.mat[colnames(cor.res), strat.factor.col])
         col.pa = greenred(100) #alt: maPalette{marray)
         #col.pa = colorRampPalette(brewer.pal(9, "Blues")[4:9])(100)
-        strat.factor2color.map = unique(meta.mat[, c(strat.factor, strat.factor.col)])
     }
     
     ###

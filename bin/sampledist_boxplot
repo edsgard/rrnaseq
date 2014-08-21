@@ -26,7 +26,9 @@ spec = matrix(c(
   'filter.bool', 'f', 1, 'logical',
   'plot.bool', 'p', 1, 'logical',
   'lib.dir', 'l', 1, 'character',
-  'help', 'h', 0, 'logical'
+  'help', 'h', 0, 'logical',
+  'ncores', 'n', '1', 'integer',
+  'nblocks', 'k', '1', 'integer'
 ), byrow=TRUE, ncol=4);
 opt = getopt(spec)
 
@@ -43,7 +45,9 @@ usage <- function(spec){
   cat(sprintf(" -x cex.axis\n\tText magnification factor. Default: 0.3\n"))
   cat(sprintf(" -f filter\n\tSave qc-failed samples or not to qc.meta.file (option -q). Allowed values: {TRUE, FALSE}. Default: TRUE\n"))
   cat(sprintf(" -p plot\n\tPlot smoothed histogram of the number of expressed genes per sample. Allowed values: {TRUE, FALSE}. Default: TRUE\n"))
-  cat(sprintf(" -l lib.dir\n\tLibrary directory with required R functions. Default: A subdir residing at '../lib' relative to where this program was executed from.\n\n"))
+  cat(sprintf(" -l lib.dir\n\tLibrary directory with required R functions. Default: A subdir residing at '../lib' relative to where this program was executed from.\n"))
+  cat(sprintf(" -n ncores\n\tSpecify the number of cores to run in parallel. Default = 1\n"))
+  cat(sprintf(" -k nblocks\n\tSpecify the number of blocks to run in parallel. Default = 1\n\n"))
   q(status=1);
 }
 
@@ -65,6 +69,8 @@ if(is.null(opt[['cex.axis']])){opt[['cex.axis']] = 0.3;}
 if(is.null(opt[['filter.bool']])){opt[['filter.bool']] = TRUE;}
 if(is.null(opt[['plot.bool']])){opt[['plot.bool']] = TRUE;}
 if(is.null(opt[['lib.dir']])){opt[['lib.dir']] = file.path(scriptPath, '../lib');}
+if(is.null(opt[['ncores']])){opt[['ncores']] = 1;}
+if(is.null(opt[['nblocks']])){opt[['nblocks']] = 1;}
 if(is.null(opt[['cor.res.file']])){
     cor.res.list = NA    
 }else{
@@ -89,7 +95,7 @@ source(file.path(opt[['lib.dir']], 'main.lib.R'), chdir = TRUE)
 ###
 #Execute
 ###
-cor.res.list = sampledist.boxplot(opt[['meta.file']], opt[['rpkm.file']], opt[['sample.cor.pdf']], opt[['qc.meta.file']], opt[['cor.meth']], opt[['max.cor.cutoff']], opt[['cex.axis']], opt[['filter.bool']], opt[['plot.bool']], cor.res.list)
+cor.res.list = sampledist.boxplot(opt[['meta.file']], opt[['rpkm.file']], opt[['sample.cor.pdf']], opt[['qc.meta.file']], opt[['cor.meth']], opt[['max.cor.cutoff']], opt[['cex.axis']], opt[['filter.bool']], opt[['plot.bool']], cor.res.list, ncores = opt[['ncores']], nblocks = opt[['nblocks']])
 
 
 ###
