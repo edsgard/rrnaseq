@@ -1,15 +1,15 @@
 
-bigcor.par <- function(MAT, nblocks = 10, verbose = TRUE, ncore=20, yMAT = NA, ...){
+bigcor.par <- function(MAT, nblocks = 10, verbose = TRUE, ncores=20, yMAT = NA, ...){
 #https://gist.github.com/bobthecat/5024079
     
   library(ff, quietly = TRUE)
   library(doMC)
   
-  if(ncore=="all"){
-      ncore = multicore:::detectCores()
-      registerDoMC(cores = ncore)
+  if(ncores=="all"){
+      ncores = multicore:::detectCores()
+      registerDoMC(cores = ncores)
   } else{
-      registerDoMC(cores = ncore)
+      registerDoMC(cores = ncores)
   }
   
 

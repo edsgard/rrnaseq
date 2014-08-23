@@ -24,7 +24,9 @@ spec = matrix(c(
   'ind.factor', 'i', 1, 'character',
   'cex', 'x', 1, 'double',
   'lib.dir', 'l', 1, 'character',
-  'help', 'h', 0, 'logical'
+  'help', 'h', 0, 'logical',
+  'ncores', 'n', '1', 'integer',
+  'nblocks', 'k', '1', 'integer'
 ), byrow=TRUE, ncol=4);
 opt = getopt(spec)
 
@@ -40,7 +42,9 @@ usage <- function(spec){
   cat(sprintf(" -s strat.factor\n\tStratification factor, which will group the samples in some of the plots. Default: nostrat\n"))
   cat(sprintf(" -i ind.factor\n\tIndividual factor, a second factor to group the samples in the sample label plot. Default: ind\n"))
   cat(sprintf(" -x cex\n\tText magnification factor. Default: 0.5\n"))
-  cat(sprintf(" -l lib.dir\n\tLibrary directory with required R functions. Default: A subdir '../lib' relative to where this program was executed from.\n\n"))
+  cat(sprintf(" -l lib.dir\n\tLibrary directory with required R functions. Default: A subdir '../lib' relative to where this program was executed from.\n"))
+  cat(sprintf(" -n ncores\n\tSpecify the number of cores to run in parallel. Default = 1\n"))
+  cat(sprintf(" -k nblocks\n\tSpecify the number of blocks to run in parallel. Default = 1\n\n"))
   q(status=1);
 }
 
@@ -61,6 +65,8 @@ if(is.null(opt[['strat.factor']])){opt[['strat.factor']] = 'nostrat';}
 if(is.null(opt[['ind.factor']])){opt[['ind.factor']] = 'ind';}
 if(is.null(opt[['cex']])){opt[['cex']] = 0.5;}
 if(is.null(opt[['lib.dir']])){opt[['lib.dir']] = file.path(scriptPath, '../lib');}
+if(is.null(opt[['ncores']])){opt[['ncores']] = 1;}
+if(is.null(opt[['nblocks']])){opt[['nblocks']] = 1;}
 if(is.null(opt[['cor.res.file']])){
     cor.res.list = NA    
 }else{
@@ -89,7 +95,7 @@ source(file.path(opt[['lib.dir']], 'pvclust-internal.R'), chdir = TRUE)
 ###
 #Execute
 ###
-cor.res.list = sample.hclust(opt[['meta.file']], opt[['rpkm.file']], opt[['sample.hclust.pdf']], opt[['cor.meth']], opt[['n.boot']], opt[['strat.factor']], opt[['ind.factor']], opt[['cex']], cor.res.list)
+cor.res.list = sample.hclust(opt[['meta.file']], opt[['rpkm.file']], opt[['sample.hclust.pdf']], opt[['cor.meth']], opt[['n.boot']], opt[['strat.factor']], opt[['ind.factor']], opt[['cex']], cor.res.list, ncores = opt[['ncores']], nblocks = opt[['nblocks']])
 
 
 ###

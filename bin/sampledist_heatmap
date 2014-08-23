@@ -22,7 +22,9 @@ spec = matrix(c(
   'cor.res.file', 'e', 1, 'character',
   'cex.sample', 'x', 1, 'double',
   'lib.dir', 'l', 1, 'character',
-  'help', 'h', 0, 'logical'
+  'help', 'h', 0, 'logical',
+  'ncores', 'n', '1', 'integer',
+  'nblocks', 'k', '1', 'integer'
 ), byrow=TRUE, ncol=4);
 opt = getopt(spec)
 
@@ -36,7 +38,9 @@ usage <- function(spec){
   cat(sprintf(" -c cor.meth\n\tCorrelation method, see the fcn \"cor\". Default: spearman\n"))
   cat(sprintf(" -e cor.res.file\n\tFile in rds-format with a list containing correlation result data-structures. If the file already exists the correlation results are read from it instead of being recalculated. Default: NA\n"))
   cat(sprintf(" -x cex.sample\n\tText magnification factor. Default: 0.7\n"))
-  cat(sprintf(" -l lib.dir\n\tLibrary directory with required R functions. Default: A subdir residing at '../lib' relative to where this program was executed from.\n\n"))
+  cat(sprintf(" -l lib.dir\n\tLibrary directory with required R functions. Default: A subdir residing at '../lib' relative to where this program was executed from.\n"))
+  cat(sprintf(" -n ncores\n\tSpecify the number of cores to run in parallel. Default = 1\n"))
+  cat(sprintf(" -k nblocks\n\tSpecify the number of blocks to run in parallel. Default = 1\n\n"))
   q(status=1);
 }
 
@@ -55,6 +59,8 @@ if(is.null(opt[['strat.factor']])){opt[['strat.factor']] = 'nostrat';}
 if(is.null(opt[['cor.meth']])){opt[['cor.meth']] = 'spearman';}
 if(is.null(opt[['cex.sample']])){opt[['cex.sample']] = 0.7;}
 if(is.null(opt[['lib.dir']])){opt[['lib.dir']] = file.path(scriptPath, '../lib');}
+if(is.null(opt[['ncores']])){opt[['ncores']] = 1;}
+if(is.null(opt[['nblocks']])){opt[['nblocks']] = 1;}
 if(is.null(opt[['cor.res.file']])){
     cor.res.list = NA    
 }else{
@@ -79,7 +85,7 @@ source(file.path(opt[['lib.dir']], 'main.lib.R'), chdir = TRUE)
 ###
 #Execute
 ###
-cor.res.list = sampledist.heatmap(opt[['meta.file']], opt[['rpkm.file']], opt[['sample.heatmap.pdf']], opt[['strat.factor']], opt[['cor.meth']], opt[['cex.sample']], cor.res.list)
+cor.res.list = sampledist.heatmap(opt[['meta.file']], opt[['rpkm.file']], opt[['sample.heatmap.pdf']], opt[['strat.factor']], opt[['cor.meth']], opt[['cex.sample']], cor.res.list, ncores = opt[['ncores']], nblocks = opt[['nblocks']])
 
 
 ###
