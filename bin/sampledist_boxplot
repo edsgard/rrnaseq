@@ -90,6 +90,7 @@ if(length(grep('cor', opt[['sample.cor.pdf']])) == 0){warning('Error: File-name 
 ###
 source(file.path(opt[['lib.dir']], 'expr.lib.R'), chdir = TRUE)
 source(file.path(opt[['lib.dir']], 'main.lib.R'), chdir = TRUE)
+source(file.path(opt[['lib.dir']], 'basic.lib.R'), chdir = TRUE)
 
 
 ###

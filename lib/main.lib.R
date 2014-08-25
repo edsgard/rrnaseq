@@ -450,7 +450,7 @@ sample2ngenes.expr <- function(rpkm, meta.mat, sample2ngenes.pdf, log.rpkm.cutof
     return(res.list)
 }
 
-sampledist.heatmap <- function(meta.file, rpkm.file, sample.heatmap.pdf, strat.factor, cor.meth, cex.sample, cor.res.list = NA, ncores = 1, nblocks = 1, ...){
+sampledist.heatmap <- function(meta.file, rpkm.file, sample.heatmap.pdf, strat.factor, cor.meth, cex.sample, cor.res.list = NA, ncores = 1, nblocks = 1, rm.diag = TRUE, ...){
 
     library('RColorBrewer')
 
@@ -521,6 +521,10 @@ sampledist.heatmap <- function(meta.file, rpkm.file, sample.heatmap.pdf, strat.f
             #add to list
             cor.res.list = c(cor.res.list, list(col.cor = col.cor, col.clust = col.clust))            
         }                
+    }
+    
+    if(rm.diag){
+    	diag(col.cor) = median(col.cor)
     }
     
     #Plot
