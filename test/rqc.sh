@@ -30,7 +30,7 @@ gene_filter -m meta.rds -r rpkm.rds -o rpkm.postqc.rds -d /mnt/kauffman/ilqara/g
 sample2ngenes_expr -m meta.rds -r rpkm.rds -o /mnt/kauffman/ilqara/gitrepos/rrnaseq/test/rqc/pdf/basic/sample2ngenes.dens.pdf -q qc.rds
 
 #Sample distance heatmap
-sampledist_heatmap -m meta.rds -r rpkm.rds -o /mnt/kauffman/ilqara/gitrepos/rrnaseq/test/rqc/pdf/sampledist/sample.heatmap.pdf -e sampledist.cor.res.rds
+sampledist_heatmap -m meta.rds -r rpkm.rds -o /mnt/kauffman/ilqara/gitrepos/rrnaseq/test/rqc/pdf/sampledist/sample.heatmap.pdf -e sampledist.cor.res.rds -n 2 -k 2
 
 #Sample distance boxplot
 sampledist_boxplot -m meta.rds -r rpkm.rds -o /mnt/kauffman/ilqara/gitrepos/rrnaseq/test/rqc/pdf/sampledist/sample.cor.pdf -q qc.rds -e sampledist.cor.res.rds

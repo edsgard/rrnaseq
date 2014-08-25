@@ -77,10 +77,11 @@ bigcor.par <- function(MAT, nblocks = 10, verbose = TRUE, ncores=20, yMAT = NA, 
 
   #remove dummy cols
   corMAT = corMAT[1:NCOL.predummy, 1:NCOL.predummy]
+  MAT = MAT[, 1:NCOL.predummy]
   
   #set row- and colnames
-#  colnames(corMAT) = colnames(MAT)
-#  rownames(corMAT) = colnames(MAT)
+  colnames(corMAT) = colnames(MAT)
+  rownames(corMAT) = colnames(MAT)
   
   return(corMAT)
 }

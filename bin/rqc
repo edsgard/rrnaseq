@@ -91,7 +91,7 @@ printf '\n#Plot number of expressed genes per sample\n' >>rqc.sh
 echo sample2ngenes_expr -m meta.rds -r rpkm.rds -o ${pdfdir}/basic/sample2ngenes.dens.pdf -q qc.rds >>rqc.sh
 
 printf '\n#Sample distance heatmap\n' >>rqc.sh
-echo sampledist_heatmap -m meta.rds -r rpkm.rds -o ${pdfdir}/sampledist/sample.heatmap.pdf -e sampledist.cor.res.rds >>rqc.sh
+echo sampledist_heatmap -m meta.rds -r rpkm.rds -o ${pdfdir}/sampledist/sample.heatmap.pdf -e sampledist.cor.res.rds -n 2 -k 2 >>rqc.sh
 
 printf '\n#Sample distance boxplot\n' >>rqc.sh
 echo sampledist_boxplot -m meta.rds -r rpkm.rds -o ${pdfdir}/sampledist/sample.cor.pdf -q qc.rds -e sampledist.cor.res.rds >>rqc.sh
