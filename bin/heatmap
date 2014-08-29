@@ -151,7 +151,7 @@ if(!is.na(opt[['columns.file']])){
 #Plot
 ###
 pdf(file = opt[['heatmap.pdf']], width = pdf.w, height = pdf.h)
-cor.res.list = rseq.heatmap(data.mat, opt[['cor.meth']], meta.mat, opt[['strat.factor']], opt[['log.fcn']], cor.res.list, opt[['color.pad']], cexRow = opt[['cex.row']], cexCol = opt[['cex.col']], scale = opt[['scale']], ncores = opt[['ncores']], nblocks = opt[['nblocks']])
+cor.res.list = rseq.heatmap(data.mat, opt[['cor.meth']], meta.mat, opt[['strat.factor']], log.fcn, cor.res.list, opt[['color.pad']], cexRow = opt[['cex.row']], cexCol = opt[['cex.col']], scale = opt[['scale']], ncores = opt[['ncores']], nblocks = opt[['nblocks']])
 dev.off()
 
 
