@@ -41,6 +41,7 @@ usage <- function(spec){
   cat(sprintf(" -l lib.dir\n\tLibrary directory with required R functions. Default: A subdir residing at '../lib' relative to where this program was executed from.\n"))
   cat(sprintf(" -n ncores\n\tSpecify the number of cores to run in parallel. Default = 1\n"))
   cat(sprintf(" -k nblocks\n\tSpecify the number of blocks to run in parallel. Default = 1\n\n"))
+  cat(sprintf(" -g log.transform\n\tLog-transform function, to log the data. To skip log-transformation set it to \"0\". Default: log10\n"))
   q(status=1);
 }
 
@@ -61,6 +62,7 @@ if(is.null(opt[['cex.sample']])){opt[['cex.sample']] = 0.7;}
 if(is.null(opt[['lib.dir']])){opt[['lib.dir']] = file.path(scriptPath, '../lib');}
 if(is.null(opt[['ncores']])){opt[['ncores']] = 1;}
 if(is.null(opt[['nblocks']])){opt[['nblocks']] = 1;}
+if(is.null(opt[['log.transform']])){opt[['log.transform']] = 'log10';}
 if(is.null(opt[['cor.res.file']])){
     cor.res.list = NA    
 }else{
@@ -82,11 +84,19 @@ source(file.path(opt[['lib.dir']], 'expr.lib.R'), chdir = TRUE)
 source(file.path(opt[['lib.dir']], 'main.lib.R'), chdir = TRUE)
 source(file.path(opt[['lib.dir']], 'basic.lib.R'), chdir = TRUE)
 
+#log.fcn
+if(opt[['log.transform']] != '0'){
+    log.fcn = get(opt[['log.transform']])
+    print(log.fcn(10))
+}else{
+    log.fcn = 0
+}
+
 
 ###
 #Execute
 ###
-cor.res.list = sampledist.heatmap(opt[['meta.file']], opt[['rpkm.file']], opt[['sample.heatmap.pdf']], opt[['strat.factor']], opt[['cor.meth']], opt[['cex.sample']], cor.res.list, ncores = opt[['ncores']], nblocks = opt[['nblocks']])
+cor.res.list = sampledist.heatmap(opt[['meta.file']], opt[['rpkm.file']], opt[['sample.heatmap.pdf']], opt[['strat.factor']], opt[['cor.meth']], opt[['cex.sample']], cor.res.list, ncores = opt[['ncores']], nblocks = opt[['nblocks']], log.fcn=log.fcn)
 
 
 ###

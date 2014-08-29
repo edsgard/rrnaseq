@@ -450,7 +450,7 @@ sample2ngenes.expr <- function(rpkm, meta.mat, sample2ngenes.pdf, log.rpkm.cutof
     return(res.list)
 }
 
-sampledist.heatmap <- function(meta.file, rpkm.file, sample.heatmap.pdf, strat.factor, cor.meth, cex.sample, cor.res.list = NA, ncores = 1, nblocks = 1, rm.diag = TRUE, ...){
+sampledist.heatmap <- function(meta.file, rpkm.file, sample.heatmap.pdf, strat.factor, cor.meth, cex.sample, cor.res.list = NA, ncores = 1, nblocks = 1, rm.diag = TRUE, log.fcn, ...){
 
     library('RColorBrewer')
 
@@ -464,7 +464,12 @@ sampledist.heatmap <- function(meta.file, rpkm.file, sample.heatmap.pdf, strat.f
 
     #Create output dir    
     dir.create(dirname(sample.heatmap.pdf), showWarnings = FALSE, recursive = TRUE)
-    
+
+    #Log
+    if(is.function(log.fcn)){
+        rpkm = log.fcn(rpkm + 1)
+        print('Logging')
+    }
     
     #######################
     #Sample-distance heatmap
@@ -701,7 +706,7 @@ sample.hclust <- function(meta.file, rpkm.file, sample.hclust.pdf, cor.meth, n.b
 
             #Pairwise dist btw samples
             col.cor = bigcor.par(rpkm, use="pairwise.complete.obs", method = cor.meth, ...)
-    
+    		
             #get dist and hclust 
             col.dist.mat = as.dist(((col.cor * -1) + 1) / 2)
             col.clust = hclust(col.dist.mat)
@@ -734,7 +739,7 @@ sample.hclust <- function(meta.file, rpkm.file, sample.hclust.pdf, cor.meth, n.b
         
                 #Pairwise dist btw samples
                 col.cor = bigcor.par(rpkm, use="pairwise.complete.obs", method = cor.meth, ...)
-
+                
                 #get dist and hclust 
                 col.dist.mat = as.dist(((col.cor * -1) + 1) / 2)
                 col.clust = hclust(col.dist.mat)
@@ -1004,6 +1009,7 @@ rseq.heatmap <- function(data.mat, cor.meth = 'spearman', meta.mat = NA, strat.h
     if(is.function(log.fcn)){
         data.mat = data.mat + 1e-10
         data.mat = log.fcn(data.mat)
+        print('Logging')
     }
 
     
