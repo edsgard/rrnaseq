@@ -1,4 +1,9 @@
 
+
+v1.1.0
+*Parallel version of cor function, bigcor.par
+*Changed default color map in sampledist_heatmap -> heat.colors
+
 v1.0.9
 *sample2ngenes.expr: API friendly (data-structures instead of files); added option to add n.genes.expr column to meta.mat
 *expr.lib.R:add.factor.color: added continuous color option and if the color column already exists it is updated

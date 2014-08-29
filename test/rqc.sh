@@ -24,7 +24,7 @@ mapstats -m meta.rds -c counts.rds -o /mnt/kauffman/ilqara/gitrepos/rrnaseq/test
 sample_expr_dhist -m meta.rds -r rpkm.rds -o /mnt/kauffman/ilqara/gitrepos/rrnaseq/test/rqc/pdf/basic/sample.expr.dens.pdf
 
 #Filter genes based on the number of samples they are expressed in and plot histogram of it
-gene_filter -m meta.rds -r rpkm.rds -o rpkm.postqc.rds -d /mnt/kauffman/ilqara/gitrepos/rrnaseq/test/rqc/pdf/basic/gene2nsamples.pdf
+gene_filter -m meta.rds -r rpkm.rds -o rpkm.postqc.rds -d /mnt/kauffman/ilqara/gitrepos/rrnaseq/test/rqc/pdf/basic/gene2nsamples.pdf -n 2
 
 #Plot number of expressed genes per sample
 sample2ngenes_expr -m meta.rds -r rpkm.rds -o /mnt/kauffman/ilqara/gitrepos/rrnaseq/test/rqc/pdf/basic/sample2ngenes.dens.pdf -q qc.rds

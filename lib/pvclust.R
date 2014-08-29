@@ -1,7 +1,13 @@
-pvclust <- function(data, method.hclust="average",
+
+
+pvclust.par <- function(data, method.hclust="average",
                     method.dist="correlation", use.cor="pairwise.complete.obs",
-                    nboot=1000, r=seq(.5,1.4,by=.1), store=FALSE, weight=FALSE)
+                    nboot=1000, r=seq(.5,1.4,by=.1), store=FALSE, weight=FALSE, mc.cores = 1)
   {
+
+  library(doMC)
+  registerDoMC(cores = mc.cores)
+  
     # data: (n,p) matrix, n-samples, p-variables
     n <- nrow(data); p <- ncol(data)
 
@@ -30,15 +36,71 @@ pvclust <- function(data, method.hclust="average",
     }
     else
       r <- as.list(size/n)
+
+      nboot.split = floor(nboot / mc.cores)
+      mod.rest = nboot %% mc.cores
+      n.splits = nboot / nboot.split
+      nboot.vec = rep(nboot.split, n.splits)
+      nboot.vec[1] = nboot.vec[1] + mod.rest
+
+
+  mboot = list()
+  length(mboot) = length(nboot.vec)
+  dummy = foreach(i = 1:length(nboot.vec)) %dopar% {
+      mboot[[i]] = lapply(r, boot.hclust, data=data, object.hclust=data.hclust, nboot = nboot.vec[i], method.dist=method.dist, use.cor=use.cor, method.hclust=method.hclust, store=store, weight=weight)
+      print(str(mboot[[i]]))
+  }
+
+#
+  gc()
+  print('AFTER')
+   print(str(mboot))
+  #  result <- pvclust.merge(data=data, object.hclust=data.hclust, mboot=mboot)
     
-    mboot <- lapply(r, boot.hclust, data=data, object.hclust=data.hclust, nboot=nboot,
-                    method.dist=method.dist, use.cor=use.cor,
-                    method.hclust=method.hclust, store=store, weight=weight)
+    return(result)
+}
+
+pvclust <- function(data, method.hclust="average",
+                    method.dist="correlation", use.cor="pairwise.complete.obs",
+                    nboot=1000, r=seq(.5,1.4,by=.1), store=FALSE, weight=FALSE)
+  {
+  
+    # data: (n,p) matrix, n-samples, p-variables
+    n <- nrow(data); p <- ncol(data)
+
+    # hclust for original data
+    METHODS <- c("ward", "single", "complete", "average", "mcquitty", 
+                 "median", "centroid")
+    method.hclust <- METHODS[pmatch(method.hclust, METHODS)]
+    
+    # Use arbitrary distance function
+    if(is.function(method.dist)) {
+        dist.pvclust <- method.dist
+    }
+    
+    distance <- dist.pvclust(data, method=method.dist, use.cor=use.cor)
+    data.hclust <- hclust(distance, method=method.hclust)
+    
+    # multiscale bootstrap
+    size <- floor(n*r)
+    rl <- length(size)
+    
+    if(rl == 1) {
+      if(r != 1.0)
+        warning("Relative sample size r is set to 1.0. AU p-values are not calculated\n")
+      
+      r <- list(1.0)
+    }
+    else
+      r <- as.list(size/n)
+
+    mboot = lapply(r, boot.hclust, data=data, object.hclust=data.hclust, nboot = nboot, method.dist=method.dist, use.cor=use.cor, method.hclust=method.hclust, store=store, weight=weight)
     
     result <- pvclust.merge(data=data, object.hclust=data.hclust, mboot=mboot)
     
     return(result)
-  }
+}
+
 
 plot.pvclust <- function(x, print.pv=TRUE, print.num=TRUE, float=0.01,
                          col.pv=c(2,3,8), cex.pv=0.8, font.pv=NULL,
