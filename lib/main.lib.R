@@ -552,8 +552,10 @@ sampledist.boxplot <- function(meta.file, rpkm.file, sample.cor.pdf, qc.meta.fil
     #Params
     ###
     qc.meta.tab.file = paste(sub('\\.rds$', '', qc.meta.file), 'tab', sep = '.')
-    cor.boxplot.pdf = sub('cor', paste('cor', cor.meth, 'boxplot', sep = '.'), sample.cor.pdf)
-    cor.max.dens.pdf = sub('cor', paste('cor', cor.meth, 'max.dens', sep = '.'), sample.cor.pdf)
+    sample.cor.pdf.dir = dirname(sample.cor.pdf)
+    sample.cor.pdf.base = basename(sample.cor.pdf)
+    cor.boxplot.pdf = file.path(sample.cor.pdf.dir, sub('cor', paste('cor', cor.meth, 'boxplot', sep = '.'), sample.cor.pdf.base))
+    cor.max.dens.pdf = file.path(sample.cor.pdf.dir, sub('cor', paste('cor', cor.meth, 'max.dens', sep = '.'), sample.cor.pdf.base))
 
     
     ###
