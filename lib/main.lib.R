@@ -533,7 +533,7 @@ sampledist.heatmap <- function(meta.file, rpkm.file, sample.heatmap.pdf, strat.f
     }
     
     #Plot
-    heatmap.pdf = sub('heatmap', paste('heatmap.', cor.meth, sep = ''), sample.heatmap.pdf)
+    heatmap.pdf = file.path(dirname(sample.heatmap.pdf), sub('heatmap', paste('heatmap.', cor.meth, sep = ''), basename(sample.heatmap.pdf)))
     pdf(file = heatmap.pdf, width = 10, height = 10)
     plot.heatmap.sample(col.cor, col.clust, meta.mat, strat.factor, cexRow = cex.sample, cexCol = cex.sample, ...)
     dev.off()
@@ -668,8 +668,10 @@ sample.hclust <- function(meta.file, rpkm.file, sample.hclust.pdf, cor.meth, n.b
     ###
     #Params
     ###
-    clust.pdf = sub('hclust.', paste('hclust.', cor.meth, '.', sep = ''), sample.hclust.pdf)
-    col.clust.pdf = sub('hclust.', paste('hclust.colors.', cor.meth, '.', sep = ''), sample.hclust.pdf)
+    sample.hclust.pdf.dir = dirname(sample.hclust.pdf)
+    sample.hclust.pdf.base = dirname(sample.hclust.base)
+    clust.pdf = file.path(sample.hclust.pdf.dir, sub('hclust.', paste('hclust.', cor.meth, '.', sep = ''), sample.hclust.pdf.base))
+    col.clust.pdf = file.path(sample.hclust.pdf.dir, sub('hclust.', paste('hclust.colors.', cor.meth, '.', sep = ''), sample.hclust.pdf.base))
     strat.factor.col = paste(strat.factor, 'color', sep = '.')
     ind.factor.col = paste(ind.factor, 'color', sep = '.')
     pdf.w = 20
@@ -811,8 +813,8 @@ pca <- function(meta.file, rpkm.file, pca.pdf, plot.comp, log.fcn, pc.cutoff, fi
     
     ###
     #Params
-    ###
-    pca.evar.pdf = sub('pca\\.', 'pca.evar.', pca.pdf)
+    ###   
+    pca.evar.pdf = file.path(dirname(pca.pdf), sub('pca\\.', 'pca.evar.', basename(pca.pdf)))
     qc.meta.tab.file = paste(sub('\\.rds$', '', qc.meta.file), 'tab', sep = '.')
     strat.factor.col = paste(strat.factor, 'color', sep = '.')
 
@@ -883,7 +885,7 @@ pca <- function(meta.file, rpkm.file, pca.pdf, plot.comp, log.fcn, pc.cutoff, fi
         #Params
         pc.x = paste('PC', plot.comp[1], sep = '')
         pc.y = paste('PC', plot.comp[2], sep = '')
-        pca.pdf = sub('pca\\.', paste('pca.', pc.x, '_', pc.y, '.', sep = ''), pca.pdf)
+        pca.pdf = file.path(dirname(pca.pdf), sub('pca\\.', paste('pca.', pc.x, '_', pc.y, '.', sep = ''), basename(pca.pdf)))
         
         #Colormaps
         meta.mat = meta.mat[rownames(pca.basis), ]
@@ -911,7 +913,7 @@ pca <- function(meta.file, rpkm.file, pca.pdf, plot.comp, log.fcn, pc.cutoff, fi
 
         #Params
         pc = paste('PC', plot.comp, sep = '')
-        pca.pdf = sub('pca\\.', paste('pca', pc, 'dhist.', sep = '.'), pca.pdf)
+        pca.pdf = file.path(dirname(pca.pdf), sub('pca\\.', paste('pca', pc, 'dhist.', sep = '.'), basename(pca.pdf)))
 
         #plot
         pdf(file = pca.pdf)

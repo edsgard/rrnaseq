@@ -91,7 +91,7 @@ printf '\n#Plot number of expressed genes per sample\n' >>rqc.sh
 echo sample2ngenes_expr -m meta.rds -r rpkm.rds -o ${pdfdir}/basic/sample2ngenes.dens.pdf -q qc.rds >>rqc.sh
 
 printf '\n#Sample distance heatmap\n' >>rqc.sh
-echo sampledist_heatmap -m meta.rds -r rpkm.rds -o ${pdfdir}/sampledist/sample.heatmap.pdf -e sampledist.cor.res.rds -n 2 -k 2 >>rqc.sh
+echo sampledist_heatmap -m meta.rds -r rpkm.rds -o ${pdfdir}/sampledist/sample.heatmap.pdf -e sampledist.cor.res.rds -n 10 -k 4 >>rqc.sh
 
 printf '\n#Sample distance boxplot\n' >>rqc.sh
 echo sampledist_boxplot -m meta.rds -r rpkm.rds -o ${pdfdir}/sampledist/sample.cor.pdf -q qc.rds -e sampledist.cor.res.rds >>rqc.sh
@@ -100,7 +100,7 @@ printf '\n#Sample hierarchical clustering\n' >>rqc.sh
 echo '#no boostrap' >>rqc.sh
 echo sample_hclust -m meta.rds -r rpkm.rds -o ${pdfdir}/sampledist/sample.hclust.pdf -b 0 -e sampledist.cor.res.rds >>rqc.sh
 echo '#with bootstrap' >>rqc.sh
-echo sample_hclust -m meta.rds -r rpkm.rds -o ${pdfdir}/sampledist/sample.hclust.b_${b}.pdf -b $b >>rqc.sh
+echo '#'sample_hclust -m meta.rds -r rpkm.rds -o ${pdfdir}/sampledist/sample.hclust.b_${b}.pdf -b $b >>rqc.sh
 
 printf '\n#PCA\n' >>rqc.sh
 echo pca -m meta.rds -r rpkm.rds -o ${pdfdir}/pca/pca.pdf -c $pc_comp >>rqc.sh

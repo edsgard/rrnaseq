@@ -1,53 +1,53 @@
 #########
 #Change working dir to output dir
 #########
-cd /mnt/kauffman/ilqara/gitrepos/rrnaseq/test/rqc/data
+cd /Volumes/Data/cloud/gdrive/work/rspd/code/my/git/rrnaseq/test/rqc/data
 
 
 #########
 #Get data
 #########
 #Get sample meta-information
-get_meta -i /mnt/kauffman/ilqara/gitrepos/rrnaseq/test/rqc/data/mapstats.tab -o meta.rds
+get_meta -i /Volumes/Data/cloud/gdrive/work/rspd/code/my/git/rrnaseq/test/rqc/data/mapstats.tab -o meta.rds
 
 #Get expression data-structures
-get_expr -i /mnt/kauffman/ilqara/gitrepos/rrnaseq/test/rpkmforgenes/refseq_rpkms.tab -o /mnt/kauffman/ilqara/gitrepos/rrnaseq/test/rqc/data
+get_expr -i /Volumes/Data/cloud/gdrive/work/rspd/code/my/git/rrnaseq/test/rpkmforgenes/refseq_rpkms.tab -o /Volumes/Data/cloud/gdrive/work/rspd/code/my/git/rrnaseq/test/rqc/data
 
 
 #########
 #Plot basic expression QC-metrics
 #########
 #Plot mapping stats
-mapstats -m meta.rds -c counts.rds -o /mnt/kauffman/ilqara/gitrepos/rrnaseq/test/rqc/pdf/seq_mapping -q qc.rds
+mapstats -m meta.rds -c counts.rds -o /Volumes/Data/cloud/gdrive/work/rspd/code/my/git/rrnaseq/test/rqc/pdf/seq_mapping -q qc.rds
 
 #Plot sample expression histogram
-sample_expr_dhist -m meta.rds -r rpkm.rds -o /mnt/kauffman/ilqara/gitrepos/rrnaseq/test/rqc/pdf/basic/sample.expr.dens.pdf
+sample_expr_dhist -m meta.rds -r rpkm.rds -o /Volumes/Data/cloud/gdrive/work/rspd/code/my/git/rrnaseq/test/rqc/pdf/basic/sample.expr.dens.pdf
 
 #Filter genes based on the number of samples they are expressed in and plot histogram of it
-gene_filter -m meta.rds -r rpkm.rds -o rpkm.postqc.rds -d /mnt/kauffman/ilqara/gitrepos/rrnaseq/test/rqc/pdf/basic/gene2nsamples.pdf -n 2
+gene_filter -m meta.rds -r rpkm.rds -o rpkm.postqc.rds -d /Volumes/Data/cloud/gdrive/work/rspd/code/my/git/rrnaseq/test/rqc/pdf/basic/gene2nsamples.pdf
 
 #Plot number of expressed genes per sample
-sample2ngenes_expr -m meta.rds -r rpkm.rds -o /mnt/kauffman/ilqara/gitrepos/rrnaseq/test/rqc/pdf/basic/sample2ngenes.dens.pdf -q qc.rds
+sample2ngenes_expr -m meta.rds -r rpkm.rds -o /Volumes/Data/cloud/gdrive/work/rspd/code/my/git/rrnaseq/test/rqc/pdf/basic/sample2ngenes.dens.pdf -q qc.rds
 
 #Sample distance heatmap
-sampledist_heatmap -m meta.rds -r rpkm.rds -o /mnt/kauffman/ilqara/gitrepos/rrnaseq/test/rqc/pdf/sampledist/sample.heatmap.pdf -e sampledist.cor.res.rds -n 2 -k 2
+sampledist_heatmap -m meta.rds -r rpkm.rds -o /Volumes/Data/cloud/gdrive/work/rspd/code/my/git/rrnaseq/test/rqc/pdf/sampledist/sample.heatmap.pdf -e sampledist.cor.res.rds -n 10 -k 4
 
 #Sample distance boxplot
-sampledist_boxplot -m meta.rds -r rpkm.rds -o /mnt/kauffman/ilqara/gitrepos/rrnaseq/test/rqc/pdf/sampledist/sample.cor.pdf -q qc.rds -e sampledist.cor.res.rds
+sampledist_boxplot -m meta.rds -r rpkm.rds -o /Volumes/Data/cloud/gdrive/work/rspd/code/my/git/rrnaseq/test/rqc/pdf/sampledist/sample.cor.pdf -q qc.rds -e sampledist.cor.res.rds
 
 #Sample hierarchical clustering
 #no boostrap
-sample_hclust -m meta.rds -r rpkm.rds -o /mnt/kauffman/ilqara/gitrepos/rrnaseq/test/rqc/pdf/sampledist/sample.hclust.pdf -b 0 -e sampledist.cor.res.rds
+sample_hclust -m meta.rds -r rpkm.rds -o /Volumes/Data/cloud/gdrive/work/rspd/code/my/git/rrnaseq/test/rqc/pdf/sampledist/sample.hclust.pdf -b 0 -e sampledist.cor.res.rds
 #with bootstrap
-sample_hclust -m meta.rds -r rpkm.rds -o /mnt/kauffman/ilqara/gitrepos/rrnaseq/test/rqc/pdf/sampledist/sample.hclust.b_10.pdf -b 10
+#sample_hclust -m meta.rds -r rpkm.rds -o /Volumes/Data/cloud/gdrive/work/rspd/code/my/git/rrnaseq/test/rqc/pdf/sampledist/sample.hclust.b_10.pdf -b 10
 
 #PCA
-pca -m meta.rds -r rpkm.rds -o /mnt/kauffman/ilqara/gitrepos/rrnaseq/test/rqc/pdf/pca/pca.pdf -c 1,2,3
-pca -m meta.rds -r rpkm.rds -o /mnt/kauffman/ilqara/gitrepos/rrnaseq/test/rqc/pdf/pca/pca.pdf -c 1,2
-pca -m meta.rds -r rpkm.rds -o /mnt/kauffman/ilqara/gitrepos/rrnaseq/test/rqc/pdf/pca/pca.pdf -c 1 -f -q qc.rds
+pca -m meta.rds -r rpkm.rds -o /Volumes/Data/cloud/gdrive/work/rspd/code/my/git/rrnaseq/test/rqc/pdf/pca/pca.pdf -c 1,2,3
+pca -m meta.rds -r rpkm.rds -o /Volumes/Data/cloud/gdrive/work/rspd/code/my/git/rrnaseq/test/rqc/pdf/pca/pca.pdf -c 1,2
+pca -m meta.rds -r rpkm.rds -o /Volumes/Data/cloud/gdrive/work/rspd/code/my/git/rrnaseq/test/rqc/pdf/pca/pca.pdf -c 1 -f -q qc.rds
 
 #Scatter plot
-scatter -d rpkm.rds -o /mnt/kauffman/ilqara/gitrepos/rrnaseq/test/rqc/pdf/scatter/sample.scatter.pdf -s 1,2,3
+scatter -d rpkm.rds -o /Volumes/Data/cloud/gdrive/work/rspd/code/my/git/rrnaseq/test/rqc/pdf/scatter/sample.scatter.pdf -s 1,2,3
 
 
 #########
@@ -66,16 +66,16 @@ gene_filter -m meta.rds -r counts.postqc.rds -o counts.postqc.rds -p FALSE
 #########
 #Plot ERCC stats
 #########
-ercc -m meta.rds -r rpkm.rds -c counts.rds -e ercc.rpkm.rds -d ercc.counts.rds -o /mnt/kauffman/ilqara/gitrepos/rrnaseq/test/rqc/pdf/ercc/fracadjusted_false
-ercc -m meta.rds -r rpkm.rds -c counts.rds -e ercc.rpkm.rds -d ercc.counts.rds -f -o /mnt/kauffman/ilqara/gitrepos/rrnaseq/test/rqc/pdf/ercc/fracadjusted_true
+ercc -m meta.rds -r rpkm.rds -c counts.rds -e ercc.rpkm.rds -d ercc.counts.rds -o /Volumes/Data/cloud/gdrive/work/rspd/code/my/git/rrnaseq/test/rqc/pdf/ercc/fracadjusted_false
+ercc -m meta.rds -r rpkm.rds -c counts.rds -e ercc.rpkm.rds -d ercc.counts.rds -f -o /Volumes/Data/cloud/gdrive/work/rspd/code/my/git/rrnaseq/test/rqc/pdf/ercc/fracadjusted_true
 
 
 #########
 #Differential expression analysis
 #########
 #Find genes with higher variance than the technical variance (ERCC)
-var_genes_brennecke -m meta.rds -c counts.postqc.rds -e ercc.counts.rds -o /mnt/kauffman/ilqara/gitrepos/rrnaseq/test/rqc/diffexp/brennecke
+var_genes_brennecke -m meta.rds -c counts.postqc.rds -e ercc.counts.rds -o /Volumes/Data/cloud/gdrive/work/rspd/code/my/git/rrnaseq/test/rqc/diffexp/brennecke
 
 #Heatmap of most variable genes found by var_genes_brennecke
-head -n100 /mnt/kauffman/ilqara/gitrepos/rrnaseq/test/rqc/diffexp/brennecke/rds/genes.ntop_500.txt >/mnt/kauffman/ilqara/gitrepos/rrnaseq/test/rqc/diffexp/brennecke/rds/genes.ntop_100.txt
-heatmap -i rpkm.rds -r /mnt/kauffman/ilqara/gitrepos/rrnaseq/test/rqc/diffexp/brennecke/rds/genes.ntop_100.txt -o /mnt/kauffman/ilqara/gitrepos/rrnaseq/test/rqc/diffexp/brennecke/pdf/topgenes.heatmap.pdf
+head -n100 /Volumes/Data/cloud/gdrive/work/rspd/code/my/git/rrnaseq/test/rqc/diffexp/brennecke/rds/genes.ntop_500.txt >/Volumes/Data/cloud/gdrive/work/rspd/code/my/git/rrnaseq/test/rqc/diffexp/brennecke/rds/genes.ntop_100.txt
+heatmap -i rpkm.rds -r /Volumes/Data/cloud/gdrive/work/rspd/code/my/git/rrnaseq/test/rqc/diffexp/brennecke/rds/genes.ntop_100.txt -o /Volumes/Data/cloud/gdrive/work/rspd/code/my/git/rrnaseq/test/rqc/diffexp/brennecke/pdf/topgenes.heatmap.pdf
