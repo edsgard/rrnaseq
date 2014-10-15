@@ -231,8 +231,14 @@ mapstats <- function(meta.file, counts.file, res.dir, strat.factor = 'nostrat', 
         factors = names(meta.factor)
         n.factors = length(factors)
         pdf(file = file.path(res.dir, 'genebody.cov.pdf'))
-        n.rows = ceiling(n.factors / 3)
-        par(mfrow = c(n.rows, 3))
+        
+        if(n.factors >=2){      
+            n.rows = ceiling(n.factors / 2)
+            par(mfrow = c(n.rows, 2))
+        }else{
+            par(mfrow = c(1, 1))
+        }
+        
         par(mar = c(3,3,2,2)) #c(bottom, left, top, right), c(5, 4, 4, 2)
         for(j.factor in factors){
             j.meta.factor = meta.factor[[j.factor]]

@@ -1,5 +1,8 @@
 
 
+v.1.2.1
+*bugfix: mapstats coverage plot
+
 v.1.2.0
 +ercc: plotting number of molecules vs RPKM (not only concentration vs RPKM)
 +added possibility for aggregating by stratum: expr_dhist, sample2ngenes
