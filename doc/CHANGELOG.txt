@@ -1,6 +1,6 @@
 
 
-v.1.1.4
+v.1.2.0
 +ercc: plotting number of molecules vs RPKM (not only concentration vs RPKM)
 +added possibility for aggregating by stratum: expr_dhist, sample2ngenes
 *API improvement: Read data in bin rather than in lib fcn: ercc, pca, expr_dhist, sampledist_heatmap
