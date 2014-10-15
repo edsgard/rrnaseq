@@ -26,6 +26,7 @@ spec = matrix(c(
   'log.size.cutoff', 'u', 1, 'double',
   'ercc.rpkm.frac.adjust', 'f', 0, 'logical',
   'cex', 'x', 1, 'double',
+  'spike.vol', 'k', 1, 'double',
   'annot.file', 'a', 1, 'character',
   'lib.dir', 'l', 1, 'character',
   'help', 'h', 0, 'logical'
@@ -48,6 +49,7 @@ usage <- function(spec){
   cat(sprintf(" -u log.size.cutoff\n\tMaximum size-factor cutoff, based on the fraction of total ERCC expression of a sample divided with expression from all its transcripts. Size-factor is calculated compared to the median of such fractions. Samples deviating from the median more than log.size.cutoff times are filtered. Default: 1\n"))
   cat(sprintf(" -f ercc.rpkm.frac.adjust\n\tAdjust the ERCC RPKM values based on the RPKM ERCC size factor (fraction of ERCC expression divided with total expression)\n"))
   cat(sprintf(" -x cex\n\tMagnification level of the text in the figures. Default: 0.8\n"))
+  cat(sprintf(" -k spike.vol\n\tVolume of the ERCC spike-in. Default: 4e-7 (== 0.1uL of a 4e-6 dilution)\n"))
   cat(sprintf(" -a annot.file\n\tInput file in rds-format, containing spike-in annotation downloaded from life-technologies web-site. Default: cmds_095046.rds, residing in a a subdir '../annot' relative to where this program was executed from.\n"))
   cat(sprintf(" -l lib.dir\n\tLibrary directory with required R functions. Default: A subdir residing at '../lib' relative to where this program was executed from.\n\n"))
   q(status=1);
@@ -74,6 +76,7 @@ if(is.null(opt[['min.rpkm']])){opt[['min.rpkm']] = 1;}
 if(is.null(opt[['log.size.cutoff']])){opt[['log.size.cutoff']] = 1;}
 if(is.null(opt[['ercc.rpkm.frac.adjust']])){opt[['ercc.rpkm.frac.adjust']] = FALSE;}
 if(is.null(opt[['cex']])){opt[['cex']] = 0.8;}
+if(is.null(opt[['spike.vol']])){opt[['spike.vol']] = 4e-7;}
 if(is.null(opt[['annot.file']])){opt[['annot.file']] = file.path(scriptPath, '../annot', 'cms_095046.rds');}
 if(is.null(opt[['lib.dir']])){opt[['lib.dir']] = file.path(scriptPath, '../lib');}
 
@@ -87,6 +90,17 @@ source(file.path(opt[['lib.dir']], 'main.lib.R'), chdir = TRUE)
 
 
 ###
+#Read data
+###
+annot = readRDS(opt[['annot.file']])
+meta.mat = readRDS(opt[['meta.file']])
+ercc.rpkm = readRDS(opt[['ercc.rpkm.file']])
+real.rpkm = readRDS(opt[['real.rpkm.file']])
+ercc.counts = readRDS(opt[['ercc.counts.file']])
+real.counts = readRDS(opt[['real.counts.file']])
+
+
+###
 #Execute
 ###
-ercc(opt[['meta.file']], opt[['real.rpkm.file']], opt[['real.counts.file']], opt[['ercc.rpkm.file']], opt[['ercc.counts.file']], opt[['annot.file']], opt[['out.dir']], opt[['strat.factor']], opt[['n.ercc.min']], opt[['min.prop']], opt[['min.rpkm']], opt[['log.size.cutoff']], opt[['ercc.rpkm.frac.adjust']], opt[['cex']])
+ercc(meta.mat, real.rpkm, real.counts, ercc.rpkm, ercc.counts, annot, opt[['out.dir']], opt[['strat.factor']], opt[['n.ercc.min']], opt[['min.prop']], opt[['min.rpkm']], opt[['log.size.cutoff']], opt[['ercc.rpkm.frac.adjust']], opt[['cex']], opt[['spike.vol']])

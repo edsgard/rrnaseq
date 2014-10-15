@@ -97,6 +97,15 @@ source(file.path(opt[['lib.dir']], 'expr.lib.R'), chdir = TRUE)
 
 
 ###
+#Read data
+###
+meta.mat = readRDS(opt[['meta.file']])
+rpkm = readRDS(opt[['rpkm.file']])
+dim(rpkm) #Refseq: 24249 x n.samples
+dim(meta.mat) #n.samples x n.cols
+
+
+###
 #Execute
 ###
-pca(opt[['meta.file']], opt[['rpkm.file']], opt[['pca.pdf']], plot.comp, log.fcn, opt[['pc.cutoff']], opt[['filter.bool']], opt[['greater.than']], opt[['qc.meta.file']], opt[['strat.factor']], opt[['point.cex']])
+pca(meta.mat, rpkm, opt[['pca.pdf']], plot.comp, log.fcn, opt[['pc.cutoff']], opt[['filter.bool']], opt[['greater.than']], opt[['qc.meta.file']], opt[['strat.factor']], opt[['point.cex']])

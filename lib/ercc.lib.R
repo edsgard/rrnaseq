@@ -20,12 +20,12 @@ mean.sd.cv <- function(ercc){
     return(ts2stats)
 }
 
-plot.ercc <- function(ercc, control.conc){
+plot.ercc <- function(ercc, control.conc, xlab = 'log2(mix1 conc)', ylab = 'log2(RPKM)'){
     
     ylim = range(ercc)
     n.samples = ncol(ercc)
     j.sample = 1
-    plot(control.conc, ercc[, j.sample], col = j.sample, ylim = ylim, type = 'p', ylab = 'log2(RPKM)', xlab = 'log2(mix1 conc)')
+    plot(control.conc, ercc[, j.sample], col = j.sample, ylim = ylim, type = 'p', ylab = ylab, xlab = xlab)
     for(j.sample in 2:n.samples){
         points(control.conc, ercc[, j.sample], col = j.sample, ylim = ylim)
     }

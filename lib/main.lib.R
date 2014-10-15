@@ -27,6 +27,11 @@ get.meta <- function(mapstats.tab.file, meta.file, meta.tab.file){
         
     meta.mat = mapstats
 
+    #ensure that coverage cols are numeric
+    meta.mat[, 'coverage.first.5'] = as.numeric(meta.mat[, 'coverage.first.5'])
+    meta.mat[, 'mid.5'] = as.numeric(meta.mat[, 'mid.5'])
+    meta.mat[, 'last.5'] = as.numeric(meta.mat[, 'last.5'])
+
     
     ########
     #Add cols
@@ -155,7 +160,6 @@ mapstats <- function(meta.file, counts.file, res.dir, strat.factor = 'nostrat', 
         dev.off()
 
         #histogram log10
-        nreads.cutoff = 1e6
         pdf(file = file.path(res.dir, 'n.reads.dens.pdf'))
         plot(density(log10(meta.mat[, 'n.reads'])), xlab = 'log10(n.reads)', main= '', col = meta.mat[, strat.factor.color])
         #abline(v = log10(nreads.cutoff))
@@ -195,7 +199,6 @@ mapstats <- function(meta.file, counts.file, res.dir, strat.factor = 'nostrat', 
 
     
         #barplot
-        nreads.cutoff = 1e6
         pdf(file = file.path(res.dir, 'n.reads.uniq.mapped.bar.pdf'), width = pdf.w, height = pdf.h)
         bp = barplot(meta.mat[, 'n.reads.uniq.mapped'], axes = FALSE, axisnames = FALSE, ylab = '# of reads', main = '# of reads', col = meta.mat[, strat.factor.color], border = NA)
         axis(2)
@@ -215,9 +218,15 @@ mapstats <- function(meta.file, counts.file, res.dir, strat.factor = 'nostrat', 
         #Gene body coverage
         ####
     
-        #boxplot for each stage
+        #boxplot for each stratum
         cov.cols = c('first.5', 'mid.5', 'last.5')
-        meta.factor = split(meta.mat, meta.mat[, strat.factor])
+
+        #exclude samples where cov.cols missing
+        rm.ind = which(is.na(meta.mat[, cov.cols[2]]))
+        meta.mat.filt = meta.mat[setdiff(1:nrow(meta.mat), rm.ind), ]
+
+        #split by stratum
+        meta.factor = split(meta.mat.filt, meta.mat.filt[, strat.factor])
         
         factors = names(meta.factor)
         n.factors = length(factors)
@@ -228,7 +237,9 @@ mapstats <- function(meta.file, counts.file, res.dir, strat.factor = 'nostrat', 
         for(j.factor in factors){
             j.meta.factor = meta.factor[[j.factor]]
             colnames(j.meta.factor) = sub('coverage.', '', colnames(j.meta.factor))
-            boxplot(j.meta.factor[, cov.cols], main = j.factor, ylab = 'coverage')        
+            if(nrow(j.meta.factor) > 0){
+                boxplot(j.meta.factor[, cov.cols], main = j.factor, ylab = 'coverage')
+            }
         }
         dev.off()
 
@@ -321,26 +332,27 @@ mapstats <- function(meta.file, counts.file, res.dir, strat.factor = 'nostrat', 
     }
 }
 
-sample.expr.dhist <- function(meta.file, rpkm.file, sampledist.pdf, strat.factor){
+expr.dhist <- function(meta.mat, rpkm, exprdist.pdf, strat.factor, log.fcn = get('log10'), strat.plot = FALSE){
 
     library('RColorBrewer')
     
-    #Load data
-    meta.mat = readRDS(meta.file)
-    rpkm = readRDS(rpkm.file)
-    #print(dim(rpkm)) #Refseq: 24249 x n.samples
-    #print(dim(meta.mat)) #n.samples x n.cols
-
     #Create output dir    
-    dir.create(dirname(sampledist.pdf), showWarnings = FALSE, recursive = TRUE)
-    
+    dir.create(dirname(exprdist.pdf), showWarnings = FALSE, recursive = TRUE)
+
     #Log
-    log.rpkm = log10(rpkm)
+    if(is.function(log.fcn)){
+        rpkm = log.fcn(rpkm)
+        print('Logging')
+    }
 
     #Plot
-    pdf(file = sampledist.pdf)
-    plot.sample.expr.dist(log.rpkm, meta.mat, strat.factor)
-    dev.off()
+    pdf(file = exprdist.pdf)
+    if(strat.plot){
+        plot.strata.expr.dist(rpkm, meta.mat, strat.factor)
+    }else{
+        plot.sample.expr.dist(rpkm, meta.mat, strat.factor)
+    }
+    dev.off()    
 }
 
 gene.filter <- function(meta.file, rpkm.file, rpkm.postqc.file, gene2nsamples.pdf, strat.factor, log.rpkm.cutoff, n.cells.cutoff, n.strata.cutoff, filter.bool, plot.bool){
@@ -385,7 +397,7 @@ gene.filter <- function(meta.file, rpkm.file, rpkm.postqc.file, gene2nsamples.pd
     }
 }
 
-sample2ngenes.expr <- function(rpkm, meta.mat, sample2ngenes.pdf, log.rpkm.cutoff, n.genes.cutoff, qc.meta.mat, filter.bool, plot.bool, meta.add){
+sample2ngenes.expr <- function(rpkm, meta.mat, sample2ngenes.pdf, log.rpkm.cutoff, n.genes.cutoff, qc.meta.mat, filter.bool, plot.bool, meta.add, strat.factor = 'nostrat'){
 
 
     library('RColorBrewer')
@@ -400,15 +412,48 @@ sample2ngenes.expr <- function(rpkm, meta.mat, sample2ngenes.pdf, log.rpkm.cutof
 
     #Get number of expr genes per sample
     n.genes.expr = apply(rpkm, 2, function(jsample, rpkm.cutoff){length(which(jsample >= rpkm.cutoff))}, rpkm.cutoff)
-
+    
     #Plot
     if(plot.bool){
 
-        #Create output dir    
+        #subset meta.mat
+        meta.mat.new = meta.mat[colnames(rpkm), ]
+        
+        #add column if it doesn't already exist
+        meta.mat.new = add.qc.col(meta.mat, 'n.genes.expr', def.val = NA)
+        
+        #set values
+        meta.mat.new[names(n.genes.expr), 'n.genes.expr'] = n.genes.expr        
+
+        #densities per stratum
+        ngenes.dens.list = tapply(meta.mat.new[, 'n.genes.expr'], meta.mat.new[, strat.factor], density)
+
+        #colormap
+        strat.factor.col = paste(strat.factor, '.color', sep = '')
+        strat.factor2color.map = unique(meta.mat.new[, c(strat.factor, strat.factor.col)])
+        rownames(strat.factor2color.map) = strat.factor2color.map[, strat.factor]
+        
+        #Create output dir
         dir.create(dirname(sample2ngenes.pdf), showWarnings = FALSE, recursive = TRUE)
 
+        #get ranges
+        xlim = range(unlist(lapply(ngenes.dens.list, '[[', 'x'))) #xlim = c(-100, 100)
+        ylim = range(unlist(lapply(ngenes.dens.list, '[[', 'y')))
+
+        #strata
+        strata = names(ngenes.dens.list)
+        n.strata = length(strata)
+        
+        #plot
         pdf(file = sample2ngenes.pdf)
-        plot(density(n.genes.expr), xlab = 'n.genes', main = '', ylab = 'Density: # of samples')
+        j.stratum.it = 1
+        j.stratum = strata[j.stratum.it]
+        plot(ngenes.dens.list[[j.stratum]], xlab = 'n.genes', main = '', ylab = 'Density: # of samples', col = strat.factor2color.map[j.stratum, strat.factor.col], xlim = xlim, ylim = ylim)
+        for(j.stratum.it in 2:n.strata){
+            j.stratum = strata[j.stratum.it]
+            lines(ngenes.dens.list[[j.stratum]], col = strat.factor2color.map[j.stratum, strat.factor.col])
+        }
+        legend('topright', legend = strat.factor2color.map[, strat.factor], col = strat.factor2color.map[, strat.factor.col], lty = 1)
         #abline(v = n.genes.cutoff)
         dev.off()
     }
@@ -450,17 +495,9 @@ sample2ngenes.expr <- function(rpkm, meta.mat, sample2ngenes.pdf, log.rpkm.cutof
     return(res.list)
 }
 
-sampledist.heatmap <- function(meta.file, rpkm.file, sample.heatmap.pdf, strat.factor, cor.meth, cex.sample, cor.res.list = NA, ncores = 1, nblocks = 1, rm.diag = TRUE, log.fcn, ...){
+sampledist.heatmap <- function(meta.mat, rpkm, sample.heatmap.pdf = 'sample.heatmap.pdf', strat.factor = 'nostrat', cor.meth = 'spearman', cex.sample = 0.7, cor.res.list = NA, ncores = 1, nblocks = 1, rm.diag = TRUE, log.fcn = get('log10'), ...){
 
     library('RColorBrewer')
-
-    ###
-    #Load data
-    ###
-    meta.mat = readRDS(meta.file)
-    rpkm = readRDS(rpkm.file)
-    dim(rpkm) #Refseq: 24249 x n.samples
-    dim(meta.mat) #n.samples x n.cols
 
     #Create output dir    
     dir.create(dirname(sample.heatmap.pdf), showWarnings = FALSE, recursive = TRUE)
@@ -669,7 +706,7 @@ sample.hclust <- function(meta.file, rpkm.file, sample.hclust.pdf, cor.meth, n.b
     #Params
     ###
     sample.hclust.pdf.dir = dirname(sample.hclust.pdf)
-    sample.hclust.pdf.base = dirname(sample.hclust.base)
+    sample.hclust.pdf.base = basename(sample.hclust.pdf)
     clust.pdf = file.path(sample.hclust.pdf.dir, sub('hclust.', paste('hclust.', cor.meth, '.', sep = ''), sample.hclust.pdf.base))
     col.clust.pdf = file.path(sample.hclust.pdf.dir, sub('hclust.', paste('hclust.colors.', cor.meth, '.', sep = ''), sample.hclust.pdf.base))
     strat.factor.col = paste(strat.factor, 'color', sep = '.')
@@ -807,7 +844,7 @@ sample.hclust <- function(meta.file, rpkm.file, sample.hclust.pdf, cor.meth, n.b
     return(cor.res.list)
 }
 
-pca <- function(meta.file, rpkm.file, pca.pdf, plot.comp, log.fcn, pc.cutoff, filter.bool, gt.bool, qc.meta.file, strat.factor, point.cex){
+pca <- function(meta.mat, rpkm, pca.pdf = 'pca.pdf', plot.comp = c(1, 2), log.fcn = get('log10'), pc.cutoff = 0, filter.bool = FALSE, gt.bool = FALSE, qc.meta.file = 'qc.meta.rds', strat.factor = 'nostrat', point.cex = 0.4){
     
     library('RColorBrewer')
     
@@ -817,16 +854,7 @@ pca <- function(meta.file, rpkm.file, pca.pdf, plot.comp, log.fcn, pc.cutoff, fi
     pca.evar.pdf = file.path(dirname(pca.pdf), sub('pca\\.', 'pca.evar.', basename(pca.pdf)))
     qc.meta.tab.file = paste(sub('\\.rds$', '', qc.meta.file), 'tab', sep = '.')
     strat.factor.col = paste(strat.factor, 'color', sep = '.')
-
     
-    ###
-    #Load data
-    ###
-    meta.mat = readRDS(meta.file)
-    rpkm = readRDS(rpkm.file)
-    dim(rpkm) #Refseq: 24249 x n.samples
-    dim(meta.mat) #n.samples x n.cols
-
 
     #Create output dir    
     dir.create(dirname(pca.pdf), showWarnings = FALSE, recursive = TRUE)
@@ -1126,7 +1154,7 @@ sample.filter <- function(data.file, qc.meta.file, out.file, filter.cols){
     saveRDS(data.mat, file = out.file)
 }
 
-ercc <- function(meta.file, real.rpkm.file, real.counts.file, ercc.rpkm.file, ercc.counts.file, annot.file, out.dir, strat.factor, n.ercc.min, min.prop, min.rpkm, log.size.cutoff, ercc.rpkm.frac.adjust, cex){
+ercc <- function(meta.mat, real.rpkm, real.counts, ercc.rpkm, ercc.counts, annot, out.dir, strat.factor, n.ercc.min, min.prop, min.rpkm, log.size.cutoff, ercc.rpkm.frac.adjust, cex, spike.vol){
 
     
     #Params
@@ -1144,22 +1172,23 @@ ercc <- function(meta.file, real.rpkm.file, real.counts.file, ercc.rpkm.file, er
     real.mean2cv.pdf = file.path(out.dir, 'real.mean2cv.pdf')
     size.factor.hist.pdf = file.path(out.dir, 'size.factor.hist.pdf')
     fraction.ercc.barplot.pdf = file.path(out.dir, 'fraction.ercc.barplot.pdf')
-    fraction.ercc.dens.pdf = file.path(out.dir, 'fraction.ercc.dens.pdf')
-
-    
-    #Read data
-    annot = readRDS(annot.file)
-    meta.mat = readRDS(meta.file)
-    ercc.rpkm = readRDS(ercc.rpkm.file)
-    real.rpkm = readRDS(real.rpkm.file)
-    ercc.counts = readRDS(ercc.counts.file)
-    real.counts = readRDS(real.counts.file)
-
+    fraction.ercc.dens.pdf = file.path(out.dir, 'fraction.ercc.dens.pdf')    
     
     #Ensure that same set samples: real.prkm, ercc.rpkm and meta.mat (for example if real.rpkm has been sample-filtered)
     pass.samples = colnames(real.rpkm)
     ercc.rpkm = ercc.rpkm[, pass.samples]
     meta.mat = meta.mat[pass.samples, ]
+
+
+    ###
+    #Convert concentration to number of added transcripts
+    ###
+    c = annot[, 'mix1.conc'] #attomol/uL
+    n.attomol = spike.vol * c #attomol
+    n.molecules = round(n.attomol * 1e-18 * 6.022 * 1e23)
+    annot = cbind(annot, n.attomol, n.molecules)
+    #print(annot[order(annot[, 'n.molecules']), ])
+    rownames(annot) = annot[, 'ERCC.ID']
 
     
     ###
@@ -1191,7 +1220,7 @@ ercc <- function(meta.file, real.rpkm.file, real.counts.file, ercc.rpkm.file, er
 
     
     ###
-    #Filter on fraction of spike-in RNA
+    #Filter samples on fraction of spike-in RNA
     ###
     ercc.sum = apply(ercc.rpkm, 2, sum)
     real.sum = apply(real.rpkm, 2, sum)
@@ -1220,6 +1249,18 @@ ercc <- function(meta.file, real.rpkm.file, real.counts.file, ercc.rpkm.file, er
 
     
     ###
+    #Correct on fraction of spike-in RNA
+    ###
+    if(ercc.rpkm.frac.adjust){
+        samples = names(size.factor)
+        ercc.corr = as.data.frame(lapply(samples, function(j.sample){ercc.rpkm[, j.sample] / size.factor[j.sample]}))
+        colnames(ercc.corr) = samples
+    
+        ercc.rpkm = ercc.corr
+    }
+
+    
+    ###
     #Plot RPKM histogram
     ###
     
@@ -1232,25 +1273,18 @@ ercc <- function(meta.file, real.rpkm.file, real.counts.file, ercc.rpkm.file, er
     batch2color.map = unique(meta.mat[, c(strat.factor, strat.factor.color)])
     pdf(file = sampledist.pdf)
     j.sample = 1
-    plot(densities[[j.sample]], col = meta.mat[j.sample, strat.factor.color], ylim = ylim, xlim = xlim, xlab = 'log2(RPKM)', main = '')
+    plot(densities[[j.sample]], col = meta.mat[j.sample, strat.factor.color], ylim = ylim, xlim = xlim, xlab = 'log2(RPKM)', main = '', xaxt = 'n')
     for(j.sample in 2:n.samples){
-        lines(densities[[j.sample]], col = meta.mat[j.sample, strat.factor.color], ylim = ylim, xlim = xlim)
+        lines(densities[[j.sample]], col = meta.mat[j.sample, strat.factor.color], ylim = ylim, xlim = xlim, xaxt = 'n')
     }
     legend('topright', legend = batch2color.map[, strat.factor], col = batch2color.map[, strat.factor.color], lty = 1)
+    min.x = floor(min(xlim))
+    max.x = ceiling(max(xlim))
+    tick.at = seq(min.x, max.x, 1)
+    tick.labels = tick.at
+    axis(side = 1, at = tick.at, labels = tick.labels, las = 2, cex.axis = 0.5)
     dev.off()
-    
-
-    ###
-    #Correct on fraction of spike-in RNA
-    ###
-    if(ercc.rpkm.frac.adjust){
-        samples = names(size.factor)
-        ercc.corr = as.data.frame(lapply(samples, function(j.sample){ercc.rpkm[, j.sample] / size.factor[j.sample]}))
-        colnames(ercc.corr) = samples
-    
-        ercc.rpkm = ercc.corr
-    }
-    
+        
     
     ####################
     #Plot
@@ -1311,8 +1345,7 @@ ercc <- function(meta.file, real.rpkm.file, real.counts.file, ercc.rpkm.file, er
         dev.off()
 
         #add real data
-        rpkm = readRDS(real.rpkm.file)
-        rpkm = rpkm[, jbatch.cells]
+        rpkm = real.rpkm[, jbatch.cells]
         
         ts2stats = mean.sd.cv(rpkm)
         pass.ts = rownames(ts2stats)[which(log10(ts2stats[, 'm']) > 0)]
@@ -1350,4 +1383,53 @@ ercc <- function(meta.file, real.rpkm.file, real.counts.file, ercc.rpkm.file, er
     plot(density(ercc.frac), xlab = 'Fraction of ERCC reads', main= '', col = meta.mat[, strat.factor.color])
     dev.off()
 
+
+    ###
+    #Filter: Exclude ERCC transcripts with 0 added transcripts
+    ###
+    added.ercc.ids = annot[which(annot[, 'n.molecules'] != 0), 'ERCC.ID']
+    ercc.counts = ercc.counts[added.ercc.ids, ]
+    annot = annot[added.ercc.ids, ]
+    print(length(added.ercc.ids))    
+
+    
+    ###
+    #RPKM vs n.mol
+    ###
+
+    annot.filt = annot
+    conc.col = 'n.molecules'
+    annot.filt = annot.filt[order(annot.filt[, conc.col]), ]
+    ercc.id = annot.filt[, 'ERCC.ID']
+
+    batch.cells = tapply(meta.mat[, 'id'], meta.mat[, strat.factor], unique)
+    batches = names(batch.cells)
+    for(j.batch in batches){
+
+        #subset cells
+        jbatch.cells = batch.cells[[j.batch]]
+        ercc.log.filt = log2(ercc.rpkm[, jbatch.cells])
+
+        #set filenames
+        j.ercc.pdf = sub('ercc.pdf', paste(strat.factor, '_', j.batch, '.nmol.ercc.pdf', sep = ''), ercc.pdf)
+        j.mean2cv.pdf = sub('mean2cv.pdf', paste(strat.factor, '_', j.batch, '.mean2cv.pdf', sep = ''), mean2cv.pdf)
+        j.real.mean2cv.pdf = sub('real.mean2cv.pdf', paste(strat.factor, '_', j.batch, '.real.mean2cv.pdf', sep = ''), real.mean2cv.pdf)
+    
+        #order by conc
+        ercc.log.filt = ercc.log.filt[ercc.id, ]
+
+        #set -inf to -10
+        ercc.log.filt.noinf = t(as.matrix(apply(ercc.log.filt, 1, function(j.ercc){j.ercc[which(j.ercc == '-Inf')] = -10; return(j.ercc)})))
+        dim(ercc.log.filt.noinf) = dim(ercc.log.filt)
+        
+        #plot
+        pdf(file = j.ercc.pdf)
+        plot.ercc(ercc.log.filt.noinf, log2(annot.filt[, conc.col]))
+        dev.off()
+    }
+
+    ###
+    #linear fit
+    ###
+    
 }

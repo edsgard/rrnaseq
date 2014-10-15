@@ -15,8 +15,10 @@ argv = commandArgs(trailingOnly = T)
 spec = matrix(c(
   'meta.file', 'm', 1, 'character',
   'rpkm.file', 'r', 1, 'character',
-  'sampledist.pdf', 'o', 1, 'character',
+  'exprdist.pdf', 'o', 1, 'character',
   'strat.factor', 's', 1, 'character',
+  'strat.plot', 'a', 0, 'logical',
+  'log.transform', 't', 1, 'character',
   'lib.dir', 'l', 1, 'character',
   'help', 'h', 0, 'logical'
 ), byrow=TRUE, ncol=4);
@@ -27,8 +29,10 @@ usage <- function(spec){
   cat(sprintf("Plot smoothed sample expression histogram\n"))
   cat(sprintf(" -m meta.file\n\tInput file in rds-format, containing mapping statistics (output by the program get_meta).\n"))
   cat(sprintf(" -r rpkm.file\n\tInput file in rds-format, containing normalized read counts for all samples and features (output by the program get_expr).\n"))
-  cat(sprintf(" -o sampledist.pdf\n\tOutput file to which the plot is printed. Default: sample.expr.dens.pdf\n"))
+  cat(sprintf(" -o exprdist.pdf\n\tOutput file to which the plot is printed. Default: sample.expr.dens.pdf\n"))
   cat(sprintf(" -s strat.factor\n\tStratification factor, which will group the samples in some of the plots. Default: nostrat.\n"))
+  cat(sprintf(" -a strat.plot\n\tAggregate data from all samples within each stratum. Default: FALSE.\n"))
+  cat(sprintf(" -t log.transform\n\tLog-transform function, to log the data before plotting. To skip log-transformation set it to \"0\". Default: log10\n"))
   cat(sprintf(" -l lib.dir\n\tLibrary directory with required R functions. Default: A subdir residing at '../lib' relative to where this program was executed from.\n\n"))
   q(status=1);
 }
@@ -43,9 +47,18 @@ if(is.null(opt[['meta.file']])){warning('Error: "m" is a required option'); usag
 if(is.null(opt[['rpkm.file']])){warning('Error: "r" is a required option'); usage(spec);}
 
 #Set defaults for optional options
-if(is.null(opt[['sampledist.pdf']])){opt[['sampledist.pdf']] = 'sample.expr.dens.pdf';}
+if(is.null(opt[['exprdist.pdf']])){opt[['exprdist.pdf']] = 'sample.expr.dens.pdf';}
 if(is.null(opt[['strat.factor']])){opt[['strat.factor']] = 'nostrat';}
+if(is.null(opt[['strat.plot']])){opt[['strat.plot']] = FALSE;}
+if(is.null(opt[['log.transform']])){opt[['log.transform']] = 'log10';}
 if(is.null(opt[['lib.dir']])){opt[['lib.dir']] = file.path(scriptPath, '../lib');}
+
+#get log fcn
+if(opt[['log.transform']] != '0'){
+    log.fcn = get(opt[['log.transform']])
+}else{
+    log.fcn = 0
+}
 
 
 ###
@@ -56,6 +69,15 @@ source(file.path(opt[['lib.dir']], 'main.lib.R'), chdir = TRUE)
 
 
 ###
+#Read data
+###
+meta.mat = readRDS(opt[['meta.file']])
+rpkm = readRDS(opt[['rpkm.file']])
+#print(dim(rpkm)) #Refseq: 24249 x n.samples
+#print(dim(meta.mat)) #n.samples x n.cols
+
+
+###
 #Execute
 ###
-sample.expr.dhist(opt[['meta.file']], opt[['rpkm.file']], opt[['sampledist.pdf']], opt[['strat.factor']])
+expr.dhist(meta.mat, rpkm, opt[['exprdist.pdf']], opt[['strat.factor']], log.fcn, opt[['strat.plot']])

@@ -1,4 +1,36 @@
 
+plot.pam.boxplots <- function(data.mat, row.clust, bpcol = 'white') {
+  
+  unique.clusters = sort(unique(row.clust))
+  n.clusters = length(unique.clusters)
+  
+  for (jcluster in 1:n.clusters){
+    cluster = unique.clusters[jcluster]
+    
+    rowsincluster = names(row.clust)[which(row.clust==cluster)]
+    n.objects = length(rowsincluster)
+    if(n.objects == 1){
+      data2plot = as.data.frame(as.matrix(t(data.mat[rowsincluster, ])))
+    }
+    else{
+      data2plot = as.data.frame(data.mat[rowsincluster, ])
+    }
+    boxplot(data2plot, main = sprintf("Cluster %i, N=%i", cluster, n.objects), col=bpcol, pch=".", las=2)
+    abline(h=0, lty = 'dashed', col = 'grey')
+  }
+}
+
+filter.col <- function(sig.res, filt.cutoff, filt.col = 'log2.fc', abs.bool = TRUE){
+
+    if(abs.bool){
+        filt.res = sig.res[which(abs(sig.res[, filt.col]) >= filt.cutoff), ]
+    }else{
+        filt.res = sig.res[which(sig.res[, filt.col] >= filt.cutoff), ]
+    }
+
+    return(filt.res)
+}
+
 bigcor.par <- function(MAT, nblocks = 10, verbose = TRUE, ncores=20, yMAT = NA, ...){
 #https://gist.github.com/bobthecat/5024079
     

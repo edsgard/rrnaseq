@@ -48,7 +48,7 @@ if(is.null(opt[['rpkm.files']])){warning('Error: "i" is a required option'); usa
 if(is.null(opt[['rsync.out.dir']])){opt[['rsync.out.dir']] = dirname(opt[['rpkm.files']][1]);}
 if(is.null(opt[['cloud.out.dir']])){opt[['cloud.out.dir']] = opt[['rsync.out.dir']];}
 if(is.null(opt[['meta.file']])){opt[['meta.file']] = NA;}
-if(is.null(opt[['meta.sample.col']])){opt[['meta.sample.col']] = NA;}
+if(is.null(opt[['meta.sample.col']])){opt[['meta.sample.col']] = 'sample';}
 if(is.null(opt[['file.list']])){opt[['file.list']] = FALSE;}
 if(is.null(opt[['lib.dir']])){opt[['lib.dir']] = file.path(scriptPath, '../lib');}
 

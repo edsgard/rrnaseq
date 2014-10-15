@@ -21,7 +21,7 @@ get_expr -i /Volumes/Data/cloud/gdrive/work/rspd/code/my/git/rrnaseq/test/rpkmfo
 mapstats -m meta.rds -c counts.rds -o /Volumes/Data/cloud/gdrive/work/rspd/code/my/git/rrnaseq/test/rqc/pdf/seq_mapping -q qc.rds
 
 #Plot sample expression histogram
-sample_expr_dhist -m meta.rds -r rpkm.rds -o /Volumes/Data/cloud/gdrive/work/rspd/code/my/git/rrnaseq/test/rqc/pdf/basic/sample.expr.dens.pdf
+expr_dhist -m meta.rds -r rpkm.rds -o /Volumes/Data/cloud/gdrive/work/rspd/code/my/git/rrnaseq/test/rqc/pdf/basic/sample.expr.dens.pdf
 
 #Filter genes based on the number of samples they are expressed in and plot histogram of it
 gene_filter -m meta.rds -r rpkm.rds -o rpkm.postqc.rds -d /Volumes/Data/cloud/gdrive/work/rspd/code/my/git/rrnaseq/test/rqc/pdf/basic/gene2nsamples.pdf

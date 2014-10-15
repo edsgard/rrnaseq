@@ -178,8 +178,59 @@ gene2nsamples <- function(rpkm, meta.mat, strat.factor, rpkm.cutoff){
     return(gene2nsamples.expr.list)
 }
 
+plot.strata.expr.dist <- function(expr.mat, meta.mat, strat.factor){
+
+    #rm columns with < 2 observations != inf (logged 0's)
+    few.datapoints.samples = colnames(expr.mat)[which(apply(expr.mat, 2, function(x){x = setdiff(x, c(Inf, -Inf)); length(unique(x))}) < 2)]
+    pass.samples = setdiff(colnames(expr.mat), few.datapoints.samples)
+    expr.mat = expr.mat[, pass.samples]
+    if(length(few.datapoints.samples) >0){
+        warning(sprintf('There were %i columns with less than two datapoints (after Inf, -Inf removal). These columns were excluded.', length(few.datapoints.samples)))
+    }
+
+    meta.mat = meta.mat[pass.samples, ]
+    
+    #Get dists
+    meta.list = split(meta.mat, meta.mat[, strat.factor])
+    strata = names(meta.list)
+    density.list = list()
+    for(j.strat in strata){
+        j.meta = meta.list[[j.strat]]
+
+        #subset
+        j.samples = j.meta[, 'id']
+        j.rpkm = expr.mat[, j.samples]
+
+        density.list[[j.strat]] = density(j.rpkm)
+    }
+        
+    #colormap
+    strat.factor.col = paste(strat.factor, '.color', sep = '')
+    strat2color.map = unique(meta.mat[, c(strat.factor, strat.factor.col)])
+
+    #get ranges
+    xlim = range(unlist(lapply(density.list, '[[', 'x'))) #xlim = c(-100, 100)
+    ylim = range(unlist(lapply(density.list, '[[', 'y')))
+    xlim = c(floor(xlim[1]), ceiling(xlim[2]))
+
+    #plot
+    n.strata = length(strata)
+    j.strat.it = 1
+    j.strat = strata[j.strat.it]
+    plot(density.list[[j.strat]], col = strat2color.map[j.strat, strat.factor.col], xlim = xlim, ylim = ylim, xaxt = 'n', xlab = 'log10(RPKM)', ylab = 'Density: n.genes', main = '')
+    for(j.strat.it in 2:n.strata){
+        j.strat = strata[j.strat.it]
+        lines(density.list[[j.strat]], col = strat2color.map[j.strat, strat.factor.col])
+    }
+    x.vec = seq(xlim[1], xlim[2], by = 1)
+    axis(1, at = x.vec, labels = x.vec, las = 2, cex.axis = 0.5)
+    legend('topright', legend = strat2color.map[, strat.factor], col = strat2color.map[, strat.factor.col], lty = 1)
+
+}
+
 plot.sample.expr.dist <- function(expr.mat, meta.mat, strat.factor){
 
+    #rm columns with < 2 observations != inf (logged 0's)
     few.datapoints.samples = colnames(expr.mat)[which(apply(expr.mat, 2, function(x){x = setdiff(x, c(Inf, -Inf)); length(unique(x))}) < 2)]
     expr.mat = expr.mat[, setdiff(colnames(expr.mat), few.datapoints.samples)]
     if(length(few.datapoints.samples) >0){
@@ -188,21 +239,25 @@ plot.sample.expr.dist <- function(expr.mat, meta.mat, strat.factor){
     
     #Get dists
     density.list = apply(expr.mat, 2, density)
-
     
-    #Plot
+    #colormap
     strat.factor.col = paste(strat.factor, '.color', sep = '')
     strat2color.map = unique(meta.mat[, c(strat.factor, strat.factor.col)])
 
-    n.samples = length(density.list)
+    #get ranges
     xlim = range(unlist(lapply(density.list, '[[', 'x'))) #xlim = c(-100, 100)
     ylim = range(unlist(lapply(density.list, '[[', 'y')))
-    
+    xlim = c(floor(xlim[1]), ceiling(xlim[2]))
+
+    #plot
+    n.samples = length(density.list)
     j.sample = 1
-    plot(density.list[[j.sample]], xlim = xlim, ylim = ylim, col = meta.mat[j.sample, strat.factor.col], main = '', xlab = 'log10(RPKM)')
+    plot(density.list[[j.sample]], xlim = xlim, ylim = ylim, col = meta.mat[j.sample, strat.factor.col], main = '', xlab = 'log10(RPKM)', xaxt = 'n')
     for(j.sample in 2:n.samples){
         lines(density.list[[j.sample]], col = meta.mat[j.sample, strat.factor.col])
     }
+    x.vec = seq(xlim[1], xlim[2], by = 1)
+    axis(1, at = x.vec, labels = x.vec, las = 2, cex.axis = 0.5)    
     legend('topright', legend = strat2color.map[, strat.factor], col = strat2color.map[, strat.factor.col], lty = 1)
 
 }

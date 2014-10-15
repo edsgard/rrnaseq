@@ -82,7 +82,7 @@ echo '#Plot mapping stats' >>rqc.sh
 echo mapstats -m meta.rds -c counts.rds -o ${pdfdir}/seq_mapping -q qc.rds >>rqc.sh
 
 printf '\n#Plot sample expression histogram\n' >>rqc.sh
-echo sample_expr_dhist -m meta.rds -r rpkm.rds -o ${pdfdir}/basic/sample.expr.dens.pdf >>rqc.sh
+echo expr_dhist -m meta.rds -r rpkm.rds -o ${pdfdir}/basic/sample.expr.dens.pdf >>rqc.sh
 
 printf '\n#Filter genes based on the number of samples they are expressed in and plot histogram of it\n' >>rqc.sh
 echo gene_filter -m meta.rds -r rpkm.rds -o rpkm.postqc.rds -d ${pdfdir}/basic/gene2nsamples.pdf >>rqc.sh

@@ -1,4 +1,18 @@
 
+
+v.1.1.4
++ercc: plotting number of molecules vs RPKM (not only concentration vs RPKM)
++added possibility for aggregating by stratum: expr_dhist, sample2ngenes
+*API improvement: Read data in bin rather than in lib fcn: ercc, pca, expr_dhist, sampledist_heatmap
+*exp_dhist: improved x-axis tick labelling
+*get.meta: bugfixed coverage boxplots
+
+v1.1.3
+*bugfix: sub strings only in basename to create output pdfs.
+
+v1.1.2
+*bugfix: sampledist.boxplot: sub string "cor" only in basename
+
 v1.1.1
 *log10 fixes
 

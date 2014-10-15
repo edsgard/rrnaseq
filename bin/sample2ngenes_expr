@@ -19,6 +19,7 @@ spec = matrix(c(
   'sample2ngenes.pdf', 'o', 1, 'character',
   'meta.file', 'm', 1, 'character',
   'qc.meta.file', 'q', 1, 'character',
+  'strat.factor', 's', 1, 'character',
   'log.rpkm.cutoff', 'c', 1, 'double',
   'n.genes.cutoff', 'n', 1, 'numeric',
   'filter.bool', 'f', 1, 'logical',
@@ -36,6 +37,7 @@ usage <- function(spec){
   cat(sprintf(" -o sample2ngenes.pdf\n\tOutput file to which the plot is printed. Default: sample2ngenes.dens.pdf\n"))
   cat(sprintf(" -m meta.file\n\tInput file in rds-format, containing mapping statistics (output by the program get_meta).\n"))
   cat(sprintf(" -q qc.meta.file\n\tOutput file in rds-format to which the qc-failed samples are stored. If the file already exists a column is added and if the column already exists (n.genes.expr) it is updated. Default: qc.meta.rds\n"))
+  cat(sprintf(" -s strat.factor\n\tStratification factor, which will group the samples in some of the plots. Default: nostrat\n"))
   cat(sprintf(" -c log.rpkm.cutoff\n\tExpression cutoff in log10-scale used to determine if a gene is expressed or not. Default: 0\n"))
   cat(sprintf(" -n n.genes.cutoff\n\tNumber of genes expressed per sample, where samples with less expressed genes are flagged. Default: 1000\n"))
   cat(sprintf(" -f filter\n\tSave qc-failed samples or not to qc.meta.file (option -d). Allowed values: {TRUE, FALSE}. Default: TRUE\n"))
@@ -57,6 +59,7 @@ if(is.null(opt[['rpkm.file']])){warning('Error: "r" is a required option'); usag
 if(is.null(opt[['sample2ngenes.pdf']])){opt[['sample2ngenes.pdf']] = 'sample2ngenes.dens.pdf';}
 if(is.null(opt[['meta.file']])){opt[['meta.file']] = NA}
 if(is.null(opt[['qc.meta.file']])){opt[['qc.meta.file']] = 'qc.meta.rds';}
+if(is.null(opt[['strat.factor']])){opt[['strat.factor']] = 'nostrat';}
 if(is.null(opt[['log.rpkm.cutoff']])){opt[['log.rpkm.cutoff']] = 0;}
 if(is.null(opt[['n.genes.cutoff']])){opt[['n.genes.cutoff']] = 1000;}
 if(is.null(opt[['filter.bool']])){opt[['filter.bool']] = TRUE;}
@@ -94,7 +97,7 @@ if(opt[['filter.bool']]){
 ###
 #Execute
 ###
-res.list = sample2ngenes.expr(rpkm, meta.mat, opt[['sample2ngenes.pdf']], opt[['log.rpkm.cutoff']], opt[['n.genes.cutoff']], qc.meta.mat, opt[['filter.bool']], opt[['plot.bool']], opt[['meta.add']])
+res.list = sample2ngenes.expr(rpkm, meta.mat, opt[['sample2ngenes.pdf']], opt[['log.rpkm.cutoff']], opt[['n.genes.cutoff']], qc.meta.mat, opt[['filter.bool']], opt[['plot.bool']], opt[['meta.add']], opt[['strat.factor']])
 
 
 ###
