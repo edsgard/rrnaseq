@@ -21,6 +21,7 @@ spec = matrix(c(
   'qc.meta.file', 'q', 1, 'character',
   'cor.meth', 'c', 1, 'character',
   'max.cor.cutoff', 'u', 1, 'double',
+  'strat.factor', 's', 1, 'character',
   'cor.res.file', 'e', 1, 'character',
   'cex.axis', 'x', 1, 'double',
   'filter.bool', 'f', 1, 'logical',
@@ -41,6 +42,7 @@ usage <- function(spec){
   cat(sprintf(" -q qc.meta.file\n\tOutput file in rds-format to which qc-failed samples are stored. If the file already exists a column is added and if the column already exists (n.genes.expr) it is updated. Default: qc.meta.rds\n"))
   cat(sprintf(" -c cor.meth\n\tCorrelation method, see the fcn \"cor\". Default: spearman\n"))
   cat(sprintf(" -u max.cor.cutoff\n\tCorrelation cutoff where samples are flagged as failed if its closest neighbor has a correlation smaller than the cutoff. Default: 0.2\n"))
+  cat(sprintf(" -s strat.factor\n\tStratification factor, which will group the samples in some of the plots. Default: nostrat\n"))
   cat(sprintf(" -e cor.res.file\n\tFile in rds-format with a list containing correlation result data-structures. If the file already exists the correlation results are read from it instead of being recalculated. Default: NA\n"))
   cat(sprintf(" -x cex.axis\n\tText magnification factor. Default: 0.3\n"))
   cat(sprintf(" -f filter\n\tSave qc-failed samples or not to qc.meta.file (option -q). Allowed values: {TRUE, FALSE}. Default: TRUE\n"))
@@ -65,6 +67,7 @@ if(is.null(opt[['sample.cor.pdf']])){opt[['sample.cor.pdf']] = 'sample.cor.pdf';
 if(is.null(opt[['qc.meta.file']])){opt[['qc.meta.file']] = 'qc.meta.rds';}
 if(is.null(opt[['cor.meth']])){opt[['cor.meth']] = 'spearman';}
 if(is.null(opt[['max.cor.cutoff']])){opt[['max.cor.cutoff']] = 0.2;}
+if(is.null(opt[['strat.factor']])){opt[['strat.factor']] = 'nostrat';}
 if(is.null(opt[['cex.axis']])){opt[['cex.axis']] = 0.3;}
 if(is.null(opt[['filter.bool']])){opt[['filter.bool']] = TRUE;}
 if(is.null(opt[['plot.bool']])){opt[['plot.bool']] = TRUE;}
@@ -94,9 +97,18 @@ source(file.path(opt[['lib.dir']], 'basic.lib.R'), chdir = TRUE)
 
 
 ###
+#Read data
+###
+meta.mat = readRDS(opt[['meta.file']])
+rpkm = readRDS(opt[['rpkm.file']])
+#dim(rpkm) #Refseq: 24249 x n.samples
+#dim(meta.mat) #n.samples x n.cols
+
+
+###
 #Execute
 ###
-cor.res.list = sampledist.boxplot(opt[['meta.file']], opt[['rpkm.file']], opt[['sample.cor.pdf']], opt[['qc.meta.file']], opt[['cor.meth']], opt[['max.cor.cutoff']], opt[['cex.axis']], opt[['filter.bool']], opt[['plot.bool']], cor.res.list, ncores = opt[['ncores']], nblocks = opt[['nblocks']])
+cor.res.list = sampledist.boxplot(meta.mat, rpkm, opt[['sample.cor.pdf']], opt[['qc.meta.file']], opt[['cor.meth']], opt[['max.cor.cutoff']], opt[['strat.factor']], opt[['cex.axis']], opt[['filter.bool']], opt[['plot.bool']], cor.res.list, ncores = opt[['ncores']], nblocks = opt[['nblocks']])
 
 
 ###

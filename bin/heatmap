@@ -136,8 +136,11 @@ if(!is.na(opt[['meta.file']])){
 #Rows
 if(!is.na(opt[['rows.file']])){
     row.sel = read.table(opt[['rows.file']], stringsAsFactors = FALSE)[[1]]
-    #print(intersect(rownames(data.mat), row.sel))
-    data.mat = data.mat[row.sel, ]
+    shared.rows = intersect(rownames(data.mat), row.sel)
+    if(length(shared.rows) != length(row.sel)){
+        warning('Some supplied rows do not exist in the data matrix and were excluded')
+    }
+    data.mat = data.mat[shared.rows, ]
 
 }
 #Cols

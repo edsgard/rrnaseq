@@ -1,5 +1,12 @@
 
 
+v1.3.0
+*heatmap: now excludes supplied rows not present in data matrix
++sampledist_boxplot: stratification now possible
+*API improvement: Read data in bin rather than in lib fcn: sampledist_boxplot
+*sample2ngenes: now plots vertical line at cutoff
+*pca: now orders the legend-labels
+
 v.1.2.1
 *bugfix: mapstats coverage plot
 

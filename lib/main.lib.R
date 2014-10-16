@@ -460,7 +460,7 @@ sample2ngenes.expr <- function(rpkm, meta.mat, sample2ngenes.pdf, log.rpkm.cutof
             lines(ngenes.dens.list[[j.stratum]], col = strat.factor2color.map[j.stratum, strat.factor.col])
         }
         legend('topright', legend = strat.factor2color.map[, strat.factor], col = strat.factor2color.map[, strat.factor.col], lty = 1)
-        #abline(v = n.genes.cutoff)
+        abline(v = n.genes.cutoff, col = 'grey', lty = 2)
         dev.off()
     }
 
@@ -585,8 +585,7 @@ sampledist.heatmap <- function(meta.mat, rpkm, sample.heatmap.pdf = 'sample.heat
     return(cor.res.list)
 }
 
-
-sampledist.boxplot <- function(meta.file, rpkm.file, sample.cor.pdf, qc.meta.file, cor.meth, max.cor.cutoff, cex.axis, filter.bool, plot.bool, cor.res.list = NA, ...){
+sampledist.boxplot <- function(meta.mat, rpkm, sample.cor.pdf, qc.meta.file, cor.meth, max.cor.cutoff, strat.factor = 'nostrat', cex.axis, filter.bool, plot.bool, cor.res.list = NA, ...){
 
 
     library('RColorBrewer')
@@ -602,14 +601,11 @@ sampledist.boxplot <- function(meta.file, rpkm.file, sample.cor.pdf, qc.meta.fil
 
     
     ###
-    #Load data
+    #Filter data
     ###
-    meta.mat = readRDS(meta.file)
-    rpkm = readRDS(rpkm.file)
-    dim(rpkm) #Refseq: 24249 x n.samples
-    dim(meta.mat) #n.samples x n.cols
-
-
+    meta.mat.filt = meta.mat[colnames(rpkm), ]
+    
+    
     ######################
     #Sample-to-sample correlation boxplot
     ######################
@@ -656,23 +652,60 @@ sampledist.boxplot <- function(meta.file, rpkm.file, sample.cor.pdf, qc.meta.fil
     max.cor = apply(col.cor.noone, 2, max, na.rm = TRUE)
     max.cor = sort(max.cor)
 
+    #filter meta.mat
+    meta.mat.filt = meta.mat[names(max.cor), ]
+
+    
     if(plot.bool){
 
         #Create output dir    
         dir.create(dirname(sample.cor.pdf), showWarnings = FALSE, recursive = TRUE)
 
+        ###
+        #Boxplots of all pairwise cors per sample
+        ###
+
         #Order by median correlation
         median.cor = apply(col.cor, 2, median)
         median.cor = sort(median.cor)
 
-        #Plot median.cor
+        #plot
         pdf(cor.boxplot.pdf)
         boxplot(col.cor[, names(median.cor)], las = 2, cex.axis = cex.axis)
         dev.off()
 
-        #Plot max.cor
+        ###
+        #Plot histogram of max.cor
+        ###
+
+        #split by strata
+        strat2sample.list = tapply(meta.mat.filt[, 'id'], meta.mat.filt[, strat.factor], unique)
+        strata = names(strat2sample.list)
+        n.strata = length(strata)
+
+        #densities per stratum
+        strat2maxcor.dens.list = lapply(strat2sample.list, function(jstrat.samples, max.cor){density(max.cor[jstrat.samples])}, max.cor = max.cor)
+
+        #get ranges
+        xlim = range(unlist(lapply(strat2maxcor.dens.list, '[[', 'x')))
+        ylim = range(unlist(lapply(strat2maxcor.dens.list, '[[', 'y')))
+
+        #colormap
+        strat.factor.col = paste(strat.factor, '.color', sep = '')
+        strat.factor2color.map = unique(meta.mat.filt[, c(strat.factor, strat.factor.col)])
+        rownames(strat.factor2color.map) = strat.factor2color.map[, strat.factor]
+
+        #plot
         pdf(cor.max.dens.pdf)
-        plot(density(max.cor), main = '', xlab = paste('max pairwise corr: ', cor.meth, sep = ''), ylab = 'Sample density')
+        j.stratum.it = 1
+        j.stratum = strata[j.stratum.it]
+        plot(strat2maxcor.dens.list[[j.stratum]], main = '', xlab = paste('max pairwise corr: ', cor.meth, sep = ''), ylab = 'Density: # of samples', col = strat.factor2color.map[j.stratum, strat.factor.col], xlim = xlim, ylim = ylim)
+        for(j.stratum.it in 2:n.strata){
+            j.stratum = strata[j.stratum.it]
+            lines(strat2maxcor.dens.list[[j.stratum]], col = strat.factor2color.map[j.stratum, strat.factor.col])
+        }
+        legend('topright', legend = strat.factor2color.map[, strat.factor], col = strat.factor2color.map[, strat.factor.col], lty = 1)
+        abline(v = max.cor.cutoff, col = 'grey', lty = 2)        
         dev.off()
     }    
     
@@ -924,6 +957,7 @@ pca <- function(meta.mat, rpkm, pca.pdf = 'pca.pdf', plot.comp = c(1, 2), log.fc
         #Colormaps
         meta.mat = meta.mat[rownames(pca.basis), ]
         strat2col.map = unique(meta.mat[, c(strat.factor, strat.factor.col)])
+        strat2col.map = strat2col.map[order(strat2col.map[, strat.factor]), ]
         strat.color = meta.mat[, strat.factor.col]
     
         #Plot

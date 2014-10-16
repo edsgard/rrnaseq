@@ -190,6 +190,7 @@ plot.pairs.pca <- function(pca.basis, e.var, meta.mat = NA, factor.color = 'stag
         cell.color.col = paste(factor.color, 'color', sep = '.')
         cell.color = meta.mat[samples, cell.color.col]
         cell2color.map = unique(meta.mat[samples, c(factor.color, cell.color.col)])
+        cell2color.map = cell2color.map[order(cell2color.map[, factor.color]), ]
         cell2color.map.col = cell2color.map[, cell.color.col]
         cell2color.map.labels = cell2color.map[, factor.color]
     }else{
