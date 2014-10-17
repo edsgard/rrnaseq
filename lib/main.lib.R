@@ -1092,7 +1092,7 @@ rseq.heatmap <- function(data.mat, cor.meth = 'spearman', meta.mat = NA, strat.h
     data.mat = rm.const.vec(data.mat, row.rm = FALSE)
     
     #pairwise dist and cluster
-    cor.res.list = rseq.hclust(data.mat, cor.meth, cor.res.list, store.col = 'col')
+    cor.res.list = rseq.hclust(data.mat, cor.meth, cor.res.list, store.col = 'col', ncores, nblocks)
 
     #get dendrogram
     col.dendro = as.dendrogram(cor.res.list[['col.hclust']])
@@ -1106,7 +1106,7 @@ rseq.heatmap <- function(data.mat, cor.meth = 'spearman', meta.mat = NA, strat.h
     data.mat = rm.const.vec(data.mat, col.rm = FALSE)
     
     #pairwise dist and cluster
-    cor.res.list = rseq.hclust(t(data.mat), cor.meth, cor.res.list, store.col = 'row')
+    cor.res.list = rseq.hclust(t(data.mat), cor.meth, cor.res.list, store.col = 'row', ncores, nblocks)
     
     #get dendrogram
     row.dendro = as.dendrogram(cor.res.list[['row.hclust']])
