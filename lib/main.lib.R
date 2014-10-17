@@ -1141,6 +1141,7 @@ rseq.heatmap <- function(data.mat, cor.meth = 'spearman', meta.mat = NA, strat.h
         meta.mat = meta.mat[samples, ]
         ColSideColors = as.character(meta.mat[, color.col])
         sample2color.map = unique(meta.mat[, c(strat.heat.factor, color.col)])
+        sample2color.map = sample2color.map[order(sample2color.map[, strat.heat.factor]), ]
     }
 
 

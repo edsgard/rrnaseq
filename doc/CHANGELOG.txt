@@ -1,4 +1,7 @@
 
+v1.3.2
+*rseq.heatmap: reorder strat2color.map
+
 v1.3.1
 *fixed missing ncores in rseq.heatmap
 
