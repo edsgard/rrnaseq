@@ -1,4 +1,6 @@
 
+v1.3.1
+*fixed missing ncores in rseq.heatmap
 
 v1.3.0
 *heatmap: now excludes supplied rows not present in data matrix
