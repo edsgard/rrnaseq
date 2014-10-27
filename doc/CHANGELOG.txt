@@ -1,4 +1,7 @@
 
+v1.4.1
+*heatmap: added possibility to skip column clustering
+
 v1.4.0
 +samseq: samseq diffexp analysis
 *gene_filter: Added second level stratification; R API improvement by reading data in bin

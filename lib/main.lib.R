@@ -1049,7 +1049,7 @@ scatter <- function(data.file, scatter.pdf, samples, transpose, log.fcn){
     dev.off()
 }
 
-rseq.heatmap <- function(data.mat, cor.meth = 'spearman', meta.mat = NA, strat.heat.factor = NA, log.fcn = log10, cor.res.list = NA, colorpad = FALSE, ColSideColors = NA, col.pal = NA, ncores = 1, nblocks = 1, ...){ 
+rseq.heatmap <- function(data.mat, cor.meth = 'spearman', meta.mat = NA, strat.heat.factor = NA, log.fcn = log10, cor.res.list = NA, colorpad = FALSE, ColSideColors = NA, col.pal = NA, ncores = 1, nblocks = 1, cluster.col = TRUE, ...){ 
 # cexRow = 0.2 #500 rows: 0.2
 # cexCol = 0.2 #500 cols: 0.2
 #Colorbars
@@ -1073,18 +1073,24 @@ rseq.heatmap <- function(data.mat, cor.meth = 'spearman', meta.mat = NA, strat.h
     }
 
     
-    ###
-    #Cluster cols
-    ###
-    #rm constant cols
-    data.mat = rm.const.vec(data.mat, row.rm = FALSE)
-    
-    #pairwise dist and cluster
-    cor.res.list = rseq.hclust(data.mat, cor.meth, cor.res.list, store.col = 'col', ncores, nblocks)
+    ##***
+    ##Cluster cols
+    ##***
 
-    #get dendrogram
-    col.dendro = as.dendrogram(cor.res.list[['col.hclust']])
-    col.dendro = reorder(col.dendro, colMeans(data.mat, na.rm = TRUE))
+    
+    if(cluster.col == TRUE){
+        ##rm constant cols
+        data.mat = rm.const.vec(data.mat, row.rm = FALSE)
+    
+        ##pairwise dist and cluster
+        cor.res.list = rseq.hclust(data.mat, cor.meth, cor.res.list, store.col = 'col', ncores, nblocks)
+
+        ##get dendrogram
+        col.dendro = as.dendrogram(cor.res.list[['col.hclust']])
+        col.dendro = reorder(col.dendro, colMeans(data.mat, na.rm = TRUE))
+    }else{
+        col.dendro = NULL
+    }
 
     
     ###
