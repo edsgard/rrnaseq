@@ -1,4 +1,10 @@
 
+v1.4.0
++samseq: samseq diffexp analysis
+*gene_filter: Added second level stratification; R API improvement by reading data in bin
+*var_genes_brennecke: Added gene subsetting; R API improvement by reading data in bin
+*add.factor.color: Putting "NA" last
+
 v1.3.2
 *rseq.heatmap: reorder strat2color.map
 

@@ -18,7 +18,8 @@ spec = matrix(c(
     'meta.file', 'm', 1, 'character',
     'counts.file', 'c', 1, 'character',
     'ercc.counts.file', 'e', 1, 'character',
-    'out.dir', 'o', 1, 'character',  
+    'out.dir', 'o', 1, 'character',
+    'genes.subset.file', 'd', 1, 'character',
     'strat.factor', 's', 1, 'character',
     'min.biol.cv2', 'b', 1, 'double',  
     'alpha', 'a', 1, 'double',
@@ -43,6 +44,7 @@ usage <- function(spec){
     cat(sprintf(" -c counts.file\n\tInput file in rds-format, containing raw read counts for all samples and features (output by the program get_expr).\n"))
     cat(sprintf(" -e ercc.counts.file\n\tInput file in rds-format, containing raw read counts for all samples and ERCC spike-in features (output by the program get_expr).\n"))
     cat(sprintf(" -o out.dir\n\tOutput directory where plots and data files are saved.\n"))
+    cat(sprintf(" -d genes.subset.file\n\tFile with gene subset, one gene per row. Default: NA\n"))
     cat(sprintf(" -s strat.factor\n\tStratification factor, which will group the samples in some of the plots. Default: nostrat\n"))
     cat(sprintf(" -b min.biol.cv2\n\tBiological coeffienct of variance (cv^2) null hypothesis. Default: 0.5^2\n"))
     cat(sprintf(" -a alpha\n\tSignificance level for the hypothesis test. Default: 1e-10\n"))
@@ -71,6 +73,7 @@ if(is.null(opt[['ercc.counts.file']])){warning('Error: "e" is a required option'
 if(is.null(opt[['out.dir']])){warning('Error: "o" is a required option'); usage(spec);}
 
 #Set defaults for optional options
+if(is.null(opt[['genes.subset.file']])){opt[['genes.subset.file']] = NA;}
 if(is.null(opt[['strat.factor']])){opt[['strat.factor']] = 'nostrat';}
 if(is.null(opt[['min.biol.cv2']])){opt[['min.biol.cv2']] = 0.5^2;}
 if(is.null(opt[['alpha']])){opt[['alpha']] = 1e-10;}
@@ -93,7 +96,20 @@ source(opt[['lib.file']], chdir = TRUE)
 
 
 ###
+#Read data
+###
+count = readRDS(opt[['counts.file']])
+ercc.raw = readRDS(opt[['ercc.counts.file']])
+meta.mat = readRDS(opt[['meta.file']])
+if(!is.logical(opt[['genes.subset.file']])){
+    genes.subset = read.table(opt[['genes.subset.file']])[[1]]
+}else{
+    genes.subset = NA
+}
+
+
+###
 #Execute
 ###
-var.genes.brennecke(opt[['counts.file']], opt[['ercc.counts.file']], opt[['meta.file']], opt[['out.dir']], opt)
+var.genes.brennecke(count, ercc.raw, meta.mat, opt[['out.dir']], opt, genes.subset)
 

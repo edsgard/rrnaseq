@@ -1,7 +1,7 @@
 #Differential expression analysis
 
 
-run.samseq <- function(meta.mat, counts, class.factor, factor.contrasts, alpha = 0.05){
+run.samseq <- function(meta.mat, counts, class.factor, factor.contrasts, alpha = 1){
 
     #get response
     data.samples = colnames(counts)

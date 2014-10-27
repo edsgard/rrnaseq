@@ -1,0 +1,139 @@
+#!/usr/bin/env Rscript
+#samseq -i data.tab -m meta.tab -g stage -o samseq.res.tab
+#Differential expression analysis by SamSeq
+
+
+###
+#Get opt
+###
+library('getopt')
+
+argv = commandArgs(trailingOnly = F)
+scriptPath = dirname(sub("--file=", "", argv[grep("--file", argv)]))
+argv = commandArgs(trailingOnly = T)
+spec = matrix(c(
+    'data.file', 'i', 1, 'character',
+    'meta.file', 'm', 1, 'character',
+    'res.file', 'o', 1, 'character',
+    'group.factor', 'g', 1, 'character',
+    'group.contrasts', 'c', 1, 'character',
+    'strat.factor', 's', 1, 'character',
+    'lib.dir', 'l', 1, 'character',
+    'help', 'h', 0, 'logical',
+    ), byrow=TRUE, ncol=4);
+opt = getopt(spec)
+
+
+##Help
+usage <- function(spec){
+  cat(getopt(spec, command = 'heatmap', usage=TRUE));
+  cat(sprintf("Column vs row heatmap\n"))
+  cat(sprintf(" -i data.file\n\tInput file in rds-format or tab-separated format, containing a matrix with data values.\n"))
+  cat(sprintf(" -m meta.file\n\tInput file in rds-format or tab-separated format, where the first column (row-names) is identical to the first row (column-names) of the data-value matrix.\n"))
+  cat(sprintf(" -o res.file\n\tOutput file to which the differential expression analysis result for each gene is printed. The filename is required to contain the string 'res'. Default: samseq.res.tab\n"))
+  cat(sprintf(" -g group.factor\n\tColumn name present in 'meta.file' containing the sample groups to contrast in the differential expression analysis.\n"))
+  cat(sprintf(" -c group.contrasts\n\tComma-separated list without spaces, listing the sample groups to contrast against each other. These groups must be present in the 'group.factor' column of the 'meta.file'. Default: The groups present in the 'group.factor' column of the 'meta.file'.\n"))
+  cat(sprintf(" -s strat.factor\n\tStratification factor present as a column in 'meta.file'. This will stratify the samples and perform analysis for each stratum. Default: nostrat\n"))
+  cat(sprintf(" -l lib.dir\n\tLibrary directory with required R functions. Default: A subdir residing at '../lib' relative to where this program was executed from.\n"))
+  q(status=1);
+}
+
+#Print usage if help flag set
+if(!is.null(opt[['help']])){
+  usage(spec)
+}
+
+#Error check that all required options were set
+if(is.null(opt[['data.file']])){warning('Error: "r" is a required option'); usage(spec);}
+if(is.null(opt[['meta.file']])){warning('Error: "m" is a required option'); usage(spec);}
+if(is.null(opt[['group.factor']])){warning('Error: "g" is a required option'); usage(spec);}
+
+#Set defaults for optional options
+if(is.null(opt[['res.file']])){opt[['res.file']] = 'samseq.res.tab';}
+if(is.null(opt[['strat.factor']])){opt[['strat.factor']] = 'nostrat';}
+if(is.null(opt[['lib.dir']])){opt[['lib.dir']] = file.path(scriptPath, '../lib');}
+
+
+###
+#Source fcn libs
+###
+source(file.path(opt[['lib.dir']], 'dea.lib.R'), chdir = TRUE)
+source(file.path(opt[['lib.dir']], 'main.lib.R'), chdir = TRUE)
+library('samr')
+
+
+###
+#Read data
+###
+
+#Data matrix
+if(length(grep('\\.rds$', opt[['data.file']])) != 0){
+    counts = readRDS(opt[['data.file']])
+}else{
+    counts = read.table(opt[['data.file']], stringsAsFactors = FALSE, sep = '\t', header = TRUE)
+}
+
+#Meta matrix
+if(!is.na(opt[['meta.file']])){
+    if(length(grep('\\.rds$', opt[['meta.file']])) != 0){
+        meta.mat = readRDS(opt[['meta.file']])
+    }else{
+        meta.mat = read.table(opt[['meta.file']], stringsAsFactors = FALSE, sep = '\t', header = TRUE)
+        rownames(meta.mat) = meta.mat[, 1]
+    }
+}else{
+    meta.mat = NA
+}
+
+#Set default for contrasts if not set
+if(is.null(opt[['group.contrasts']])){opt[['group.contrasts']] = unique(meta.mat[, opt[['group.factor']]]);}
+
+
+####
+##Filter samples
+####
+count.samples = colnames(counts)
+meta.samples = rownames(meta.mat)
+shared.samples = intersect(count.samples, meta.samples)
+meta.mat = meta.mat[shared.samples, ]
+counts = counts[, shared.samples]
+
+
+####   
+##split meta.mat by strat.factor
+####
+strat.factor = opt[['strat.factor']]
+if(strat.factor == 'nostrat'){
+    meta.list = list()
+    meta.list[['nostrat']] = meta.mat
+}else{
+    meta.list = split(meta.mat, meta.mat[, strat.factor])
+}
+
+##also add the unstratified
+##meta.list[['nostrat']] = meta.mat
+
+
+####
+##Run samseq on each stratum
+####
+stages = names(meta.list)
+res.list = list()
+for(j.stage in stages){
+    print(j.stage)
+    res.list[[j.stage]] = run.samseq(meta.list[[j.stage]], counts, opt[['group.factor']], opt[['group.contrasts']])
+}
+
+
+####
+##Dump
+####
+##Flat files
+res.file = opt[['res.file']]
+dir.create(dirname(res.file), recursive = TRUE)    
+
+stages = names(res.list)
+for(j.stage in stages){
+    j.tab.file = file.path(dirname(res.file), sub('res', paste('res.strat_', j.stage, sep = ''), basename(res.file)))
+    write.table(res.list[[j.stage]], quote = FALSE, row.names = FALSE, sep = '\t', file = j.tab.file)
+}

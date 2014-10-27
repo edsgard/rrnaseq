@@ -205,7 +205,7 @@ ercc.filter <- function(ercc.raw, n.ercc.min, min.count, min.prop){
     return(ercc.raw)
 }
 
-var.genes.brennecke <- function(count.file, ercc.count.file, meta.file, out.dir, params){
+var.genes.brennecke <- function(count, ercc.raw, meta.mat, out.dir, params, genes.subset = NA){
 
     
     ###
@@ -233,15 +233,7 @@ var.genes.brennecke <- function(count.file, ercc.count.file, meta.file, out.dir,
     #Create output dirs
     dir.create(dirname(ercc.fit.pdf), recursive = TRUE, showWarnings = FALSE)
     dir.create(dirname(stats.list.rds), recursive = TRUE, showWarnings = FALSE)
-
     
-    ###
-    #Read data
-    ###
-    count = readRDS(count.file)
-    ercc.raw = readRDS(ercc.count.file)
-    meta.mat = readRDS(meta.file)
-
     
     ###
     #Filter samples such that all agree with samples in count
@@ -254,6 +246,13 @@ var.genes.brennecke <- function(count.file, ercc.count.file, meta.file, out.dir,
 
     dim(ercc.raw) #456
 
+    ###
+    #Filter genes
+    ###
+    if(!is.logical(genes.subset)){
+        count = count[intersect(rownames(count), genes.subset), ]
+    }
+    
     
     ###
     #Filter ERCC samples on presence of spike-in

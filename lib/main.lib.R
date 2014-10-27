@@ -361,26 +361,12 @@ expr.dhist <- function(meta.mat, rpkm, exprdist.pdf, strat.factor, log.fcn = get
     dev.off()    
 }
 
-gene.filter <- function(meta.file, rpkm.file, rpkm.postqc.file, gene2nsamples.pdf, strat.factor, log.rpkm.cutoff, n.cells.cutoff, n.strata.cutoff, filter.bool, plot.bool){
-
+gene.filter <- function(meta.file, rpkm.file, rpkm.postqc.file, gene2nsamples.pdf, strat.factor, rpkm.cutoff, n.cells.cutoff, n.strata.cutoff, nstrata.strat.factor, nstrata.ncells.cutoff, nstrata.nstrata.cutoff, filter.bool, plot.bool){
     
-    ###
-    #Load data
-    ###
-    rpkm = readRDS(rpkm.file)
-    meta.mat = readRDS(meta.file)
-    dim(rpkm) #Refseq: 24249 x n.samples
-    dim(meta.mat) #n.samples x n.cols
-
-
     #################
     #Gene filter: Number of cells a gene is expressed in
     #################
-    #Filter all genes not passing a filter of expr in n samples in any stratum
     
-    #Params
-    rpkm.cutoff = 10^(log.rpkm.cutoff)    
-
     #plot
     if(plot.bool){
 
@@ -395,7 +381,7 @@ gene.filter <- function(meta.file, rpkm.file, rpkm.postqc.file, gene2nsamples.pd
     #Filter genes
     if(filter.bool){
         print(nrow(rpkm))
-        rpkm = gene2nsamples.expr.filter(rpkm, n.cells.cutoff, rpkm.cutoff, strat.factor, meta.mat, n.strata.cutoff)
+        rpkm = gene2nsamples.expr.filter(rpkm, n.cells.cutoff, rpkm.cutoff, strat.factor, meta.mat, n.strata.cutoff, nstrata.strat.factor, nstrata.ncells.cutoff, nstrata.nstrata.cutoff)
         print(nrow(rpkm))
 
         #Dump
@@ -426,7 +412,7 @@ sample2ngenes.expr <- function(rpkm, meta.mat, sample2ngenes.pdf, log.rpkm.cutof
         meta.mat.new = meta.mat[colnames(rpkm), ]
         
         #add column if it doesn't already exist
-        meta.mat.new = add.qc.col(meta.mat, 'n.genes.expr', def.val = NA)
+        meta.mat.new = add.qc.col(meta.mat.new, 'n.genes.expr', def.val = NA)
         
         #set values
         meta.mat.new[names(n.genes.expr), 'n.genes.expr'] = n.genes.expr        
@@ -438,6 +424,7 @@ sample2ngenes.expr <- function(rpkm, meta.mat, sample2ngenes.pdf, log.rpkm.cutof
         strat.factor.col = paste(strat.factor, '.color', sep = '')
         strat.factor2color.map = unique(meta.mat.new[, c(strat.factor, strat.factor.col)])
         rownames(strat.factor2color.map) = strat.factor2color.map[, strat.factor]
+        strat.factor2color.map = strat.factor2color.map[order(strat.factor2color.map[, strat.factor]), ]
         
         #Create output dir
         dir.create(dirname(sample2ngenes.pdf), showWarnings = FALSE, recursive = TRUE)
@@ -693,6 +680,7 @@ sampledist.boxplot <- function(meta.mat, rpkm, sample.cor.pdf, qc.meta.file, cor
         #colormap
         strat.factor.col = paste(strat.factor, '.color', sep = '')
         strat.factor2color.map = unique(meta.mat.filt[, c(strat.factor, strat.factor.col)])
+        strat.factor2color.map = strat.factor2color.map[order(strat.factor2color.map[, strat.factor]), ]
         rownames(strat.factor2color.map) = strat.factor2color.map[, strat.factor]
 
         #plot
@@ -1220,7 +1208,10 @@ ercc <- function(meta.mat, real.rpkm, real.counts, ercc.rpkm, ercc.counts, annot
     ercc.rpkm = ercc.rpkm[, pass.samples]
     meta.mat = meta.mat[pass.samples, ]
 
+    #Subset real.counts genes
+    real.counts = real.counts[intersect(rownames(real.counts), rownames(real.rpkm)), ]
 
+    
     ###
     #Convert concentration to number of added transcripts
     ###
@@ -1312,6 +1303,7 @@ ercc <- function(meta.mat, real.rpkm, real.counts, ercc.rpkm, ercc.counts, annot
     ylim = range(unlist(lapply(densities, '[[', 'y')))
     
     batch2color.map = unique(meta.mat[, c(strat.factor, strat.factor.color)])
+    batch2color.map = batch2color.map[order(batch2color.map[, strat.factor]), ]
     pdf(file = sampledist.pdf)
     j.sample = 1
     plot(densities[[j.sample]], col = meta.mat[j.sample, strat.factor.color], ylim = ylim, xlim = xlim, xlab = 'log2(RPKM)', main = '', xaxt = 'n')
@@ -1465,7 +1457,7 @@ ercc <- function(meta.mat, real.rpkm, real.counts, ercc.rpkm, ercc.counts, annot
         
         #plot
         pdf(file = j.ercc.pdf)
-        plot.ercc(ercc.log.filt.noinf, log2(annot.filt[, conc.col]))
+        plot.ercc(ercc.log.filt.noinf, log2(annot.filt[, conc.col]), xlab = 'log2(n molecules)')
         dev.off()
     }
 
