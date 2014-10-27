@@ -1,4 +1,7 @@
 
+v1.4.2
+*samseq: single "," bugfix
+
 v1.4.1
 *heatmap: added possibility to skip column clustering
 

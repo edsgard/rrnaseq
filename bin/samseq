@@ -19,7 +19,7 @@ spec = matrix(c(
     'group.contrasts', 'c', 1, 'character',
     'strat.factor', 's', 1, 'character',
     'lib.dir', 'l', 1, 'character',
-    'help', 'h', 0, 'logical',
+    'help', 'h', 0, 'logical'
     ), byrow=TRUE, ncol=4);
 opt = getopt(spec)
 
