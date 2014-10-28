@@ -1,4 +1,7 @@
 
+v1.5.0
++rds2tab file format converter
+
 v1.4.2
 *samseq: single "," bugfix
 

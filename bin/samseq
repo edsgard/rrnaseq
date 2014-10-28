@@ -26,8 +26,8 @@ opt = getopt(spec)
 
 ##Help
 usage <- function(spec){
-  cat(getopt(spec, command = 'heatmap', usage=TRUE));
-  cat(sprintf("Column vs row heatmap\n"))
+  cat(getopt(spec, command = 'samseq', usage=TRUE));
+  cat(sprintf("Samseq differential expression analysis\n"))
   cat(sprintf(" -i data.file\n\tInput file in rds-format or tab-separated format, containing a matrix with data values.\n"))
   cat(sprintf(" -m meta.file\n\tInput file in rds-format or tab-separated format, where the first column (row-names) is identical to the first row (column-names) of the data-value matrix.\n"))
   cat(sprintf(" -o res.file\n\tOutput file to which the differential expression analysis result for each gene is printed. The filename is required to contain the string 'res'. Default: samseq.res.tab\n"))
