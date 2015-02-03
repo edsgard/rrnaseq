@@ -481,7 +481,7 @@ sample2ngenes.expr <- function(rpkm, meta.mat, sample2ngenes.pdf, log.rpkm.cutof
         meta.mat[names(n.genes.expr), 'n.genes.expr'] = n.genes.expr        
         
         #Add colormap cols
-        meta.mat = add.factor.color(meta.mat, 'n.genes.expr', discrete = FALSE)
+        meta.mat = add.factor.color(meta.mat, 'n.genes.expr', discrete = FALSE, palette.name = 'Reds')
     }
     
     res.list = list(n.genes.expr = n.genes.expr, qc.meta.mat = qc.meta.mat, meta.mat = meta.mat)
@@ -1177,7 +1177,7 @@ sample.filter <- function(data.file, qc.meta.file, out.file, filter.cols){
     if(filter.cols == 'all'){
         filter.cols = colnames(qc.mat)
     }
-    fail.samples = rownames(qc.mat)[which(apply(qc.mat[, filter.cols], 1, function(jrow){any(jrow == 1)}))]
+    fail.samples = rownames(qc.mat)[which(apply(qc.mat[, filter.cols, drop = FALSE], 1, function(jrow){any(jrow == 1)}))]
     pass.samples = setdiff(colnames(data.mat), fail.samples)
 
     #Filter samples

@@ -1,4 +1,14 @@
 
+v1.6.0
++combat confounding factor adjustment
++pca biplot
++gene-expr based colormap of samples
++ggplot-based two-dim pca
+*sample.filter bugfix: don't change datastructure if n.cols == 1
+*add.factor.color: palette.name as arg
+*var.genes.brennecke: pseudocount added to handle combat-normalized data and other minor fixes
+*pca: added support for plotting continous colormaps
+
 v1.5.0
 +rds2tab file format converter
 

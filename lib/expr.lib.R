@@ -219,7 +219,8 @@ plot.strata.expr.dist <- function(expr.mat, meta.mat, strat.factor){
     #colormap
     strat.factor.col = paste(strat.factor, '.color', sep = '')
     strat2color.map = unique(meta.mat[, c(strat.factor, strat.factor.col)])
-
+    rownames(strat2color.map) = strat2color.map[, strat.factor]
+    
     #get ranges
     xlim = range(unlist(lapply(density.list, '[[', 'x'))) #xlim = c(-100, 100)
     ylim = range(unlist(lapply(density.list, '[[', 'y')))
@@ -517,7 +518,113 @@ meta.add.colormaps <- function(meta.mat){
     return(meta.mat)
 }
 
-add.factor.color <- function(meta.mat, factor, discrete = TRUE){
+mixcolor.mat <- function(colors.mat, mix.factors, mix.factors.pal){
+###mix colors (additive mixing)
+    library('colorspace')
+    library('RColorBrewer')
+
+    n.factors = length(mix.factors)
+
+    ##get colors
+    factor1 = mix.factors[1]
+    factor1.color.col = paste(factor1, 'color', sep = '.')
+    factor1.color = colors.mat[, factor1.color.col]
+
+    factor2 = mix.factors[2]
+    factor2.color.col = paste(factor2, 'color', sep = '.')
+    factor2.color = colors.mat[, factor2.color.col]
+
+    ##mix
+    mixed.color = hex(mixcolor(0.5, hex2RGB(factor1.color), hex2RGB(factor2.color), where = 'RGB'))
+
+    ##if additional factors, mix them NON-commutatively
+    if(n.factors >= 3){
+        for(j.factor in 3:n.factors){
+
+            ##get colors
+            factor1.color = mixed.color
+            
+            factor2 = mix.factors[j.factor]
+            factor2.color.col = paste(factor2, 'color', sep = '.')
+            factor2.color = colors.mat[, factor2.color.col]
+
+            ##mix
+            mixed.color = hex(mixcolor(0.5, hex2RGB(factor1.color), hex2RGB(factor2.color), where = 'RGB'))
+        }    
+    }
+    
+    ##color legend
+    mixed.factor.val = rep(NA, nrow(colors.mat))
+    for(j.factor.it in 1:n.factors){
+        j.factor = mix.factors[j.factor.it]
+        j.factor.col = brewer.pal(9, mix.factors.pal[j.factor.it])[9]
+        mixed.factor.val[j.factor.it] = paste(j.factor, j.factor.col, sep = '; color: ')
+    }
+    
+    ##bind to colors.mat    
+    colors.mat = cbind(colors.mat, mixed.factor.val, mixed.color, stringsAsFactors = FALSE)
+
+    ##colnames
+    mixed.factor = paste(mix.factors, collapse = '.')
+    mixed.color.col = paste(mixed.factor, 'color', sep = '.')
+    colnames(colors.mat)[(ncol(colors.mat) - 1):ncol(colors.mat)] = c(mixed.factor, mixed.color.col)
+
+    return(colors.mat)
+}
+
+get.gene.colormap <- function(j.rpkm, genes2color.list, pad.frac = 0, sum.stat = 'median'){    
+###gene-based colormap: median of Z-scaled normalized values (scaled relative to other cells in the set)
+
+    ##rm rows (genes) with zero variance
+    const.rows = which(apply(j.rpkm, 1, function(x){var(x) == 0}))
+    if(length(const.rows) != 0){
+        warning('There are constant rows. These are removed.')
+        j.rpkm = j.rpkm[setdiff(1:nrow(j.rpkm), const.rows), ]
+    }
+
+    ##scale
+    j.rpkm = t(scale(t(j.rpkm)))
+
+    ##loop gene sets
+    gene.sets = names(genes2color.list)
+    n.sets = length(gene.sets)
+    for(j.set in 1:n.sets){
+
+        j.set.name = gene.sets[j.set]
+        
+        ##get genes
+        j.genes = genes2color.list[[j.set.name]][['genes']]
+        j.palette = genes2color.list[[j.set.name]][['palette.name']]
+        j.genes = intersect(j.genes, rownames(j.rpkm))
+        
+        ##color by median or mean expression
+        if(sum.stat == 'mean'){
+            j.weights = genes2color.list[[j.set.name]][['weights']]
+            j.weights = j.weights[j.genes]
+            j.stats = as.data.frame(as.matrix(apply(j.rpkm[j.genes, , drop = FALSE], 2, weighted.mean, w = j.weights)))
+        }
+        if(sum.stat == 'median'){
+            j.stats = as.data.frame(as.matrix(apply(j.rpkm[j.genes, , drop = FALSE], 2, median)))
+        }
+        colnames(j.stats) = j.set.name
+
+        
+        ##get color
+        j.genes2colormap = add.factor.color(j.stats, factor = j.set.name, discrete = FALSE, palette.name = j.palette, pad.frac = pad.frac)
+
+
+        ##bind
+        if(j.set == 1){
+            genes2colormap = j.genes2colormap
+        }else{
+            genes2colormap = cbind(genes2colormap, j.genes2colormap)
+        }
+
+    }
+    return(genes2colormap)
+}
+
+add.factor.color <- function(meta.mat, factor, discrete = TRUE, palette.name = 'Dark2', pad.frac = 0){
     library('RColorBrewer')
     
     if(discrete){
@@ -528,24 +635,36 @@ add.factor.color <- function(meta.mat, factor, discrete = TRUE){
             factors = factors[c(setdiff(1:n.factors, na.ind), na.ind)]
         }
         if(n.factors < 3){
-            factor2color.map = brewer.pal(3, 'Dark2')[1:n.factors]
+            factor2color.map = brewer.pal(3, palette.name)[1:n.factors]
         }else{
             if(n.factors > 8){
-                factor2color.map = colorRampPalette(brewer.pal(8, 'Dark2'))(n.factors)
+                factor2color.map = colorRampPalette(brewer.pal(8, palette.name))(n.factors)
             }else{
-                factor2color.map = brewer.pal(n.factors, 'Dark2')[1:n.factors]
+                factor2color.map = brewer.pal(n.factors, palette.name)[1:n.factors]
             }
         }
         names(factor2color.map) = factors
         factor.color = factor2color.map[as.character(meta.mat[, factor])]
     }else{ #continuous
 
-        #color palette
-        n.cols = 100
-        col.pal = colorRampPalette(brewer.pal(9, "Reds"))(n.cols)
+        ##color palette (e.g. 'Reds', 'Blues', ...)
+        n.cols = 30
+        col.pal = colorRampPalette(brewer.pal(9, palette.name)[3:9])(n.cols)
+
+        ##pad end with the end color to make the bright portion smaller
+        if(pad.frac > 0){
+            ##pad ends of palette with the "end" values
+            pad.len = (pad.frac * n.cols) / (1 - pad.frac)
+            col.pal = c(col.pal, rep(col.pal[length(col.pal)], pad.len))
+        }
+        n.cols = length(col.pal)
         
-        #scale the range to 1:n.cols as to get the index in the col.pal
-        vals = meta.mat[, factor]
+        ##scale the range to 1:n.cols as to get the index in the col.pal
+        if(is.vector(meta.mat)){
+            vals = meta.mat
+        }else{
+            vals = meta.mat[, factor]
+        }
         min.val = min(vals, na.rm = TRUE)
         max.val = max(vals, na.rm = TRUE)
         range.val = max.val - min.val

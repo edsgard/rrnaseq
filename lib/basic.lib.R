@@ -1,4 +1,143 @@
 
+
+pca.twodim.plot <- function(pca, pc.x, pc.y, meta.mat, strat.factor, obs.alpha = 0.9){
+
+    library('ggplot2')
+
+    ##get PC basis
+    pca.basis = pca[['x']]
+    
+    ##subset
+    pca.basis = pca.basis[, c(pc.x, pc.y)]
+    pca.basis = data.frame(obsnames = row.names(pca.basis), pca.basis)
+    meta.mat = meta.mat[rownames(pca.basis), ]
+    
+    ##add strat.factor for color-purposes
+    pca.basis = cbind(pca.basis, meta.mat[, strat.factor], stringsAsFactors = FALSE)
+    colnames(pca.basis)[ncol(pca.basis)] = strat.factor
+    
+    ##Plot as points
+    g.plot = ggplot(pca.basis, aes_string(x = pc.x, y = pc.y, colour = strat.factor)) + geom_point(alpha = obs.alpha) ##color = obs.colors    
+    
+    ##Turn off bg + grid
+    g.plot = g.plot + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), panel.background = element_blank(), axis.line = element_line(colour = "black"))
+    
+    ##legend
+    if(!is.character(meta.mat[, strat.factor])){
+        ##g.plot = g.plot + scale_colour_gradient(low = '#C6DBEF', high = '#08306B', name = 'ICMvsTE\nmarkers')
+        ##g.plot = g.plot + scale_colour_gradientn(colours = c('#C6DBEF', '#C6DBEF', '#08306B', '#08306B'), values = c(0, 0.3, 0.7, 1), name = 'ICMvsTE\nmarkers')
+        g.plot = g.plot + scale_colour_gradient2()
+        ##custom: scale_colour_gradient(palette = )
+    }else{
+
+        strat.factor.col = paste(strat.factor, '.color', sep = '')
+        strat2col.map = unique(meta.mat[, c(strat.factor, strat.factor.col)])
+        strat2col.map = strat2col.map[order(strat2col.map[, strat.factor]), ]
+
+        g.plot = g.plot + scale_colour_manual(breaks = strat2col.map[, strat.factor], values = strat2col.map[, strat.factor.col])
+    }
+    
+    return(g.plot)
+}
+
+pca.biplot <- function(pca, pc.x = "PC1", pc.y = "PC2", plot.vars, meta.mat, obs.color.col = NA, obs.alpha = 0.9, var.size = 1.5, var.alpha = 0.85, var.colors = '#DE2D26') {
+###pca is an object from prcomp
+
+    library('ggplot2')
+    
+    ##Observations
+    pca.basis = pca[['x']]
+    
+    ##subset
+    pca.basis = pca.basis[, c(pc.x, pc.y)]
+    pca.basis = data.frame(obsnames = row.names(pca.basis), pca.basis)
+
+    ##add color
+    pca.basis = cbind(pca.basis, meta.mat[rownames(pca.basis), obs.color.col], stringsAsFactors = FALSE)
+    colnames(pca.basis)[ncol(pca.basis)] = obs.color.col
+    
+    ##Variables
+    pca.rot = pca[['rotation']]
+    
+    ##subset
+    pca.rot = pca.rot[plot.vars, c(pc.x, pc.y)]
+    pca.rot = data.frame(varnames = rownames(pca.rot), pca.rot)
+
+    ##rescale pca.rot such that on the same scale as pca.basis
+    mult.factor = min( (max(pca.basis[, pc.y]) - min(pca.basis[, pc.y]) / (max(pca.rot[, pc.y]) - min(pca.rot[, pc.y]))), (max(pca.basis[, pc.x]) - min(pca.basis[, pc.x]) / (max(pca.rot[, pc.x]) - min(pca.rot[, pc.x]))) )
+    pc.x.rescaled = pca.rot[, pc.x] * mult.factor * 1.2
+    pc.y.rescaled = pca.rot[, pc.y] * mult.factor * 1.2
+    pca.rot = cbind(pca.rot, pc.x.rescaled, pc.y.rescaled)
+
+    ##Observations as points
+    g.plot = ggplot(pca.basis, aes_string(x = pc.x, y = pc.y, colour = obs.color.col)) + geom_point(alpha = obs.alpha) ##color = obs.colors    
+    
+    ##Variables as text
+    g.plot = g.plot + coord_equal() + geom_text(data = pca.rot, aes(x = pc.x.rescaled, y = pc.y.rescaled, label = varnames), alpha = var.alpha, size = var.size, color = var.colors, vjust = 0.5, hjust = 0.5)
+
+    ##Turn off bg + grid
+    g.plot = g.plot + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), panel.background = element_blank(), axis.line = element_line(colour = "black"))
+
+    ##Legend
+    if(!is.character(meta.mat[, obs.color.col])){
+        ##g.plot = g.plot + scale_colour_gradient(low = '#C6DBEF', high = '#08306B', name = 'ICMvsTE\nmarkers')
+        ##g.plot = g.plot + scale_colour_gradientn(colours = c('#C6DBEF', '#C6DBEF', '#08306B', '#08306B'), values = c(0, 0.3, 0.7, 1), name = 'ICMvsTE\nmarkers')
+        g.plot = g.plot + scale_colour_gradient2()
+        ##custom: scale_colour_gradient(palette = )
+    }else{
+
+        strat.factor.color.col = paste(obs.color.col, '.color', sep = '')
+        strat2col.map = unique(meta.mat[, c(obs.color.col, strat.factor.color.col)])
+        strat2col.map = strat2col.map[order(strat2col.map[, obs.color.col]), ]
+
+        g.plot = g.plot + scale_colour_manual(breaks = strat2col.map[, obs.color.col], values = strat2col.map[, strat.factor.color.col])
+    }
+            
+    ##Arrows
+    ##g.plot = g.plot + geom_segment(data = pca.rot, aes(x=0, y=0, xend = pc.x.rescaled, yend = pc.y.rescaled), arrow = arrow(length=unit(0.2,"cm")), alpha = 0.75, color = var.colors)
+    
+    return(g.plot)
+}
+
+
+rrnaseq.combat <- function(data.mat, meta.mat, batch.factor){
+
+    library('sva')
+    
+    ##Filter out singletons
+    batch = meta.mat[, batch.factor]
+    embryo2ncells = table(batch)
+    embryo.singles = names(embryo2ncells)[which(embryo2ncells == 1)]
+    pass.samples = setdiff(meta.mat[, 'id'], meta.mat[embryo.singles, 'id'])
+    data.mat = data.mat[, pass.samples]
+    meta.mat = meta.mat[pass.samples, ]
+    batch = meta.mat[, batch.factor]
+
+    ##rm rows (genes) with constant variance
+    const.rows = which(apply(data.mat, 1, function(x){var(x) == 0}))
+    if(length(const.rows) != 0){
+        warning('There are constant rows. These are removed.')
+        data.mat = data.mat[setdiff(1:nrow(data.mat), const.rows), ]
+    }
+
+    ##rm cols (samples) with constant variance
+    const.cols = which(apply(data.mat, 2, function(x){var(x) == 0}))
+    if(length(const.cols) != 0){
+        warning('There are constant cols. These are removed.')
+        data.mat = data.mat[, setdiff(1:ncol(data.mat), const.cols)]
+    }
+    meta.mat = meta.mat[colnames(data.mat), ]
+    batch = meta.mat[, batch.factor]
+    
+    ##model.matrix
+    modcombat = model.matrix(~1, data = meta.mat)
+    
+    ##combat
+    data.mat.adj = ComBat(dat = data.mat, batch = batch, mod = modcombat, numCovs = NULL, par.prior = TRUE, prior.plots = FALSE)
+
+    return(data.mat.adj)    
+}
+
 plot.pam.boxplots <- function(data.mat, row.clust, bpcol = 'white') {
   
   unique.clusters = sort(unique(row.clust))
@@ -185,19 +324,32 @@ pears.cor.dist <- function(data.mat, ...){
 plot.pairs.pca <- function(pca.basis, e.var, meta.mat = NA, factor.color = 'stage', point.text.cex = 0.7, points.cex = 1){
 
     #set up color mappings
-    samples = rownames(pca.basis)
+    samples = rownames(pca.basis)    
+    color.legend = FALSE
     if(!is.logical(meta.mat)){
+        meta.mat = meta.mat[samples, ]        
         cell.color.col = paste(factor.color, 'color', sep = '.')
-        cell.color = meta.mat[samples, cell.color.col]
-        cell2color.map = unique(meta.mat[samples, c(factor.color, cell.color.col)])
-        cell2color.map = cell2color.map[order(cell2color.map[, factor.color]), ]
-        cell2color.map.col = cell2color.map[, cell.color.col]
-        cell2color.map.labels = cell2color.map[, factor.color]
+        cell.color = meta.mat[, cell.color.col]
+        
+        if(is.character(meta.mat[, factor.color])){ #else numeric values on contiounous
+            
+            color.legend = TRUE            
+            n.mixed = length(grep('; color: ', meta.mat[, factor.color]))
+            if(n.mixed != 0){
+                cell2color.map = t(as.data.frame(sapply(meta.mat[1:n.mixed, factor.color], strsplit, '; color: ')))
+                colnames(cell2color.map) = c(factor.color, cell.color.col)
+            }else{            
+                cell2color.map = unique(meta.mat[, c(factor.color, cell.color.col)])
+            }
+            cell2color.map = cell2color.map[order(cell2color.map[, factor.color]), ]
+            cell2color.map.col = cell2color.map[, cell.color.col]
+            cell2color.map.labels = cell2color.map[, factor.color]
+        }
     }else{
         cell.color = par('col')
     }
         
-    #set up panels
+    ##set up panels
     point.text.panel <- function(x, y){text(x, y, labels = samples, col = cell.color, cex = point.text.cex)}
     point.panel <- function(x, y){points(x, y, col = cell.color, pch = 16, cex = points.cex)}
     diag.panel <- function(x, y, labels, ...){
@@ -209,17 +361,12 @@ plot.pairs.pca <- function(pca.basis, e.var, meta.mat = NA, factor.color = 'stag
     }
     text.panel <- function(x, y, labels, ...){
 
-        if(labels == 'PC1'){
-            txt.y = 0.8
-            if(!is.logical(meta.mat)){
-                txt.y = 0.3
-                legend('topleft', legend = cell2color.map.labels, col = cell2color.map.col, lty = 1, cex = 0.7)
-            }
-            text(0.5, txt.y, sprintf('%s: %.1f%s', labels, e.var[grep(paste('^', labels, '$', sep = ''), colnames(pca.basis))] * 100, '%'));
+        txt.y = 0.8
+        if(color.legend == TRUE){
+            txt.y = 0.3
+            legend('topleft', legend = cell2color.map.labels, col = cell2color.map.col, lty = 1, cex = 0.7)
         }
-        else{
-            text(0.5, 0.8, sprintf('%s: %.1f%s', labels, e.var[grep(paste('^', labels, '$', sep = ''), colnames(pca.basis))] * 100, '%'));
-        }
+        text(0.5, txt.y, sprintf('%s: %.1f%s', labels, e.var[grep(paste('^', labels, '$', sep = ''), colnames(pca.basis))] * 100, '%'));            
     }
                                                  
     #plot

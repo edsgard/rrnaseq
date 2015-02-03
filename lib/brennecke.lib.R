@@ -15,7 +15,11 @@ plot.cv2vsmean <- function(real.stats, ercc.stats, tech.fit.res, sel.genes, sel.
     a1.tilde = tech.fit.res['a1.tilde']
     psia1theta = tech.fit.res['psia1theta']
     
-    #Limits
+    ##Limits
+    if(min(gene.means) < 0){
+        gene.means = gene.means + abs(min(gene.means)) + 1
+    }
+    
     xlim = range(log10(gene.means))
     xlim[1] = floor(xlim[1])
     xlim[2] = ceiling(xlim[2])
@@ -152,7 +156,7 @@ ercc.fit <- function(ercc.stats, ercc.size.factors, real.size.factors, pass.gene
     #Explained variance
     residual.var = var(log(fitted.values(fit)) - log(ercc.stats[pass.genes, 'cv2']) )
     total.var = var(log(ercc.stats[pass.genes, 'cv2']))
-    expl.var = 1 - residual.var / total.var
+    expl.var = 1 - (residual.var / total.var)
 
     #bind
     fit.res = c(xi, a0, a1.tilde, a1, psia1theta, residual.var, total.var, expl.var)
@@ -205,7 +209,7 @@ ercc.filter <- function(ercc.raw, n.ercc.min, min.count, min.prop){
     return(ercc.raw)
 }
 
-var.genes.brennecke <- function(count, ercc.raw, meta.mat, out.dir, params, genes.subset = NA){
+var.genes.brennecke <- function(count, ercc.raw, meta.mat, out.dir, params, genes.subset = NA, cell2group = NA){
 
     
     ###
@@ -241,10 +245,10 @@ var.genes.brennecke <- function(count, ercc.raw, meta.mat, out.dir, params, gene
 
     pass.samples = colnames(count)
     count = count[, pass.samples]
-    ercc.raw = ercc.raw[, pass.samples]
+    ercc.raw = ercc.raw[, intersect(colnames(ercc.raw), pass.samples)]
     meta.mat = meta.mat[pass.samples, ]
 
-    dim(ercc.raw) #456
+    dim(ercc.raw) #
 
     ###
     #Filter genes
@@ -265,18 +269,26 @@ var.genes.brennecke <- function(count, ercc.raw, meta.mat, out.dir, params, gene
 
     #Filter
     ercc.filt = ercc.filter(ercc.raw, n.ercc.min, min.count, min.prop)
-    dim(ercc.filt) #84, 352    
+    dim(ercc.filt)
 
     
     ###
     #Normalize counts
     ###
-    #Real data
-    real.size.factors = estimateSizeFactorsForMatrix(count)
+    ##Real data
+    pseudo.count = 1
+    if(min(count, na.rm = TRUE) < 0){
+        pseudo.count = abs(min(count, na.rm = TRUE)) + 1
+    }
+    real.size.factors = estimateSizeFactorsForMatrix(count + pseudo.count)
     expr = t( t(count) / real.size.factors )
 
-    #ERCC
-    ercc.size.factors = estimateSizeFactorsForMatrix(ercc.filt)
+    ##ERCC
+    pseudo.count = 0
+    if(min(ercc.filt, na.rm = TRUE) < 0){
+        pseudo.count = abs(min(ercc.filt, na.rm = TRUE)) + 1
+    }
+    ercc.size.factors = estimateSizeFactorsForMatrix(ercc.filt + pseudo.count)
     ercc = t( t(ercc.filt) / ercc.size.factors )
 
     
@@ -290,17 +302,18 @@ var.genes.brennecke <- function(count, ercc.raw, meta.mat, out.dir, params, gene
     
     #Get stats
     ercc.stats = get.ercc.stats(ercc)    
+
+    ##Filter NAs
+    ercc.stats = ercc.stats[!is.na(ercc.stats[, 'mean']), ]
     
     #Filter genes on min mean expression
     min.mean = unname( quantile( ercc.stats[which(ercc.stats[, 'cv2'] > min.cv2 ), 'mean'], quant.cutoff ) )
     pass.genes = rownames(ercc.stats)[which(ercc.stats[, 'mean'] >= min.mean)]
-    length(pass.genes) #25
+    print(length(pass.genes))
 
     #Fit ERCC
     ercc.fit.res = ercc.fit(ercc.stats, ercc.size.factors, real.size.factors, pass.genes)
     print(ercc.fit.res['expl.var'])
-    #all: 0.91
-            
     
     
     ######
@@ -313,13 +326,17 @@ var.genes.brennecke <- function(count, ercc.raw, meta.mat, out.dir, params, gene
     min.expr = params[['min.expr']]
     min.cells.expr = params[['min.cells.expr']]
         
-    #Get stats and test
+    ##Stats for all cells
     real.stats = get.real.stats(expr, ercc.fit.res, ercc.size.factors, real.size.factors, min.biol.cv2)
 
-    #Split cells by strat.factor
-    meta2stage.list = split(meta.mat, meta.mat[, strat.factor])
-    stages = names(meta2stage.list)
-    
+    ##Split cells by strat.factor
+    if(!is.data.frame(cell2group)){
+        cell2group = meta.mat
+    }
+    stage2id.list = tapply(cell2group[, 'id'], cell2group[, strat.factor], unique)
+    stages = names(stage2id.list)
+
+    ##Stats for subsets of cells
     n.stages = length(stages)
     real.stats.list = list()
     length(real.stats.list) = n.stages
@@ -329,7 +346,7 @@ var.genes.brennecke <- function(count, ercc.raw, meta.mat, out.dir, params, gene
         print(stage)
         
         #subset cells
-        samples.subset = meta2stage.list[[stage]][, 'id']
+        samples.subset = stage2id.list[[stage]]
         expr.subset = expr[ , samples.subset]
         real.size.factors.subset = real.size.factors[samples.subset]
 
@@ -346,8 +363,7 @@ var.genes.brennecke <- function(count, ercc.raw, meta.mat, out.dir, params, gene
         
         j.real.stats = rbind(j.real.stats, rm.genes.mat)
         
-
-        #save
+        #store
         real.stats.list[[stage]] = j.real.stats
     }
 
@@ -382,6 +398,10 @@ var.genes.brennecke <- function(count, ercc.raw, meta.mat, out.dir, params, gene
 
     #get top genes
     top.genes = all.stats.mat[1:params[['n.top']], 'gene']
+
+    ##Filter NAs
+    real.stats.list = lapply(real.stats.list, function(j.res){j.res[which(!is.na(j.res[, 'mean'])), ]})
+    ercc.stats = ercc.stats[!is.na(ercc.stats[, 'mean']), ]
     
     #Dump
     saveRDS(real.stats.list, file = stats.list.rds)
@@ -418,6 +438,8 @@ var.genes.brennecke <- function(count, ercc.raw, meta.mat, out.dir, params, gene
     #Plot every stage
     stages = names(real.stats.list)
     for(stage in stages){
+
+        print(stage)
         
         real.stats = real.stats.list[[stage]]
 
