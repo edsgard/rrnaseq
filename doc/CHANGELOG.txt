@@ -1,4 +1,7 @@
 
+v1.6.1
+*read.rpkm: bugfix: Handling case where basenames are identical
+
 v1.6.0
 +combat confounding factor adjustment
 +pca biplot

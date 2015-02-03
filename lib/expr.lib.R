@@ -300,7 +300,12 @@ read.rpkm <- function(rpkm.files){
     #the first comment line #samples should be kept, ignore the other comment lines
     base.files = basename(rpkm.files)
     n.files = length(base.files)
-    
+    n.uniq.files = length(unique(base.files))
+    if(n.files != n.uniq.files){
+    	 base.files = paste(base.files, 1:n.files, sep = '.')
+    }	 
+    names(base.files) = rpkm.files
+
     counts.list = list()
     length(counts.list) = n.files
     names(counts.list) = base.files
@@ -333,8 +338,8 @@ read.rpkm <- function(rpkm.files){
         colnames(counts) = header
         rownames(rpkm) = gene.id
         rownames(counts) = gene.id
-        rpkm.list[[basename(j.file)]] = rpkm
-        counts.list[[basename(j.file)]] = counts
+        rpkm.list[[base.files[j.file]]] = rpkm
+        counts.list[[base.files[j.file]]] = counts
     }
     
     #handle non-unique gene-names (change to uniq.genes names)
