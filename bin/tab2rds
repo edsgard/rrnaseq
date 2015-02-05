@@ -41,7 +41,7 @@ file.tab = opt[['file.tab']]
 if(is.null(opt[['file.rds']])){opt[['file.rds']] = file.path(dirname(file.tab), sub('\\.tab$', '.rds', basename(file.tab)));}
 
 ##Read
-data.mat = read.table(file.tab, sep = '\t', stringsAsFactors = FALSE, header = TRUE, row.names = 1)
+data.mat = read.table(file.tab, sep = '\t', stringsAsFactors = FALSE, header = TRUE, row.names = 1, comment.char = '')
 
 ##Dump
 saveRDS(data.mat, file = file.rds)
