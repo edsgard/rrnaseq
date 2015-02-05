@@ -44,5 +44,5 @@ if(is.null(opt[['file.rds']])){opt[['file.rds']] = file.path(dirname(file.tab), 
 data.mat = read.table(file.tab, sep = '\t', stringsAsFactors = FALSE, header = TRUE, row.names = 1, comment.char = '')
 
 ##Dump
-saveRDS(data.mat, file = file.rds)
+saveRDS(data.mat, file = opt[['file.rds']])
 write.table(data.mat, quote = FALSE, col.names = NA, file = opt[['file.tab']], sep = '\t')
