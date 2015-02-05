@@ -1,0 +1,48 @@
+#!/usr/bin/env Rscript
+#tab2rds -i file.tab -o file.rds
+#Change file format from "tab" to "rds"
+
+
+###
+#Get opt
+###
+library('getopt')
+
+argv = commandArgs(trailingOnly = F)
+scriptPath = dirname(sub("--file=", "", argv[grep("--file", argv)]))
+argv = commandArgs(trailingOnly = T)
+spec = matrix(c(
+    'file.tab', 'i', 1, 'character',
+    'file.rds', 'o', 1, 'character',
+    'help', 'h', 0, 'logical'
+    ), byrow=TRUE, ncol=4);
+opt = getopt(spec)
+
+
+##Help
+usage <- function(spec){
+  cat(getopt(spec, command = 'rds2tab', usage=TRUE));
+  cat(sprintf("tab2rds\n"))
+  cat(sprintf(" -i file.tab\n\tInput file in tab-separated format\n"))
+  cat(sprintf(" -o file.rds\n\tOutput file in rds format. Default: sub('.tab$', '.rds', file.tab)\n"))
+  q(status=1);
+}
+
+##Print usage if help flag set
+if(!is.null(opt[['help']])){
+  usage(spec)
+}
+
+##Error check that all required options were set
+if(is.null(opt[['file.tab']])){warning('Error:"i" is a required option'); usage(spec);}
+						  
+##Set defaults for optional options
+file.tab = opt[['file.tab']]
+if(is.null(opt[['file.rds']])){opt[['file.rds']] = file.path(dirname(file.tab), sub('\\.tab$', '.rds', basename(file.tab)));}
+
+##Read
+data.mat = read.table(file.tab, sep = '\t', stringsAsFactors = FALSE, header = TRUE, row.names = 1)
+
+##Dump
+saveRDS(data.mat, file = file.rds)
+write.table(data.mat, quote = FALSE, col.names = NA, file = opt[['file.tab']], sep = '\t')

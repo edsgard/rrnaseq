@@ -1,4 +1,7 @@
 
+v1.7.0
++added tab2rds
+
 v1.6.1
 *read.rpkm: bugfix: Handling case where basenames are identical
 
