@@ -325,7 +325,9 @@ read.rpkm <- function(rpkm.files){
         nm.id = data.df[, 2]
         gene2nm.mat = cbind(gene.id, nm.id)
         data.df = data.df[, setdiff(1:ncol(data.df), 1:2)]
-        n.samples = length(header)
+	n.data.samples = ncol(data.df)
+	n.samples = n.data.samples / 2
+	header = header[1:n.samples]
         rpkm = as.matrix(data.df[, 1:n.samples])
         counts = as.matrix(data.df[, (n.samples+1):ncol(data.df)])
 
@@ -347,11 +349,18 @@ read.rpkm <- function(rpkm.files){
     counts.list = lapply(counts.list, set.unique.rownames)
     
     #bind rpkm
-    gene.names = rownames(rpkm.list[[1]])
-    n.genes = length(gene.names)
+    n.files = length(rpkm.list)
+    gene2freq = table(unlist(lapply(rpkm.list, rownames)))
+    shared.genes = names(gene2freq)[which(gene2freq == n.files)]
+    setdiff.genes = setdiff(names(gene2freq), shared.genes)
+    n.diff.genes = length(setdiff.genes)
+    if(n.diff.genes != 0){
+      warning(sprintf('The gene annotation differs between your files! There were %i differing genes, among these are: %s', n.diff.genes, paste(head(setdiff.genes, 30), collapse = ', ')))
+    }
+    n.genes = length(shared.genes)
     all.rpkm = matrix(nrow = n.genes, ncol = 0)
     for(j.rpkm in rpkm.list){
-        all.rpkm = cbind(all.rpkm, j.rpkm[gene.names, ])
+        all.rpkm = cbind(all.rpkm, j.rpkm[shared.genes, ])
     }
     rpkm = all.rpkm
     
@@ -360,11 +369,11 @@ read.rpkm <- function(rpkm.files){
     rpkm = rpkm[setdiff(rownames(rpkm), ercc.id), ]
 
     #bind counts
-    gene.names = rownames(counts.list[[1]])
-    n.genes = length(gene.names)
+    ##shared.genes = rownames(counts.list[[1]])
+    ##n.genes = length(shared.genes)
     all.counts = matrix(nrow = n.genes, ncol = 0)
     for(j.counts in counts.list){
-        all.counts = cbind(all.counts, j.counts[gene.names, ])
+        all.counts = cbind(all.counts, j.counts[shared.genes, ])
     }
     counts = all.counts
     
@@ -578,7 +587,7 @@ mixcolor.mat <- function(colors.mat, mix.factors, mix.factors.pal){
 }
 
 get.gene.colormap <- function(j.rpkm, genes2color.list, pad.frac = 0, sum.stat = 'median'){    
-###gene-based colormap: median of Z-scaled normalized values (scaled relative to other cells in the set)
+###gene-based colormap: column-wise median of Z-scaled normalized rows (gene expr scaled relative to other cells in the set)
 
     ##rm rows (genes) with zero variance
     const.rows = which(apply(j.rpkm, 1, function(x){var(x) == 0}))
@@ -587,7 +596,7 @@ get.gene.colormap <- function(j.rpkm, genes2color.list, pad.frac = 0, sum.stat =
         j.rpkm = j.rpkm[setdiff(1:nrow(j.rpkm), const.rows), ]
     }
 
-    ##scale
+    ##scale rows
     j.rpkm = t(scale(t(j.rpkm)))
 
     ##loop gene sets
@@ -606,7 +615,7 @@ get.gene.colormap <- function(j.rpkm, genes2color.list, pad.frac = 0, sum.stat =
         if(sum.stat == 'mean'){
             j.weights = genes2color.list[[j.set.name]][['weights']]
             j.weights = j.weights[j.genes]
-            j.stats = as.data.frame(as.matrix(apply(j.rpkm[j.genes, , drop = FALSE], 2, weighted.mean, w = j.weights)))
+            j.stats = as.data.frame(as.matrix(apply(j.rpkm[j.genes, , drop = FALSE], 2, function(jcell.expr, w){sum(jcell.expr * w);}, w = j.weights)))
         }
         if(sum.stat == 'median'){
             j.stats = as.data.frame(as.matrix(apply(j.rpkm[j.genes, , drop = FALSE], 2, median)))

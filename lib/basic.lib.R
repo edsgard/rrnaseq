@@ -1,6 +1,6 @@
 
 
-pca.twodim.plot <- function(pca, pc.x, pc.y, meta.mat, strat.factor, obs.alpha = 0.9){
+pca.twodim.plot <- function(pca, pc.x, pc.y, meta.mat, strat.factor, obs.alpha = 0.9, xlim = NA, ylim = NA){
 
     library('ggplot2')
 
@@ -18,10 +18,21 @@ pca.twodim.plot <- function(pca, pc.x, pc.y, meta.mat, strat.factor, obs.alpha =
     
     ##Plot as points
     g.plot = ggplot(pca.basis, aes_string(x = pc.x, y = pc.y, colour = strat.factor)) + geom_point(alpha = obs.alpha) ##color = obs.colors    
+
+    ##axis lims
+    if(is.numeric(xlim)){
+        g.plot = g.plot + coord_cartesian(xlim = xlim)
+    }
+    if(is.numeric(ylim)){
+        g.plot = g.plot + coord_cartesian(ylim = ylim)
+    }
+    if(is.numeric(ylim) & is.numeric(xlim)){
+        g.plot = g.plot + coord_cartesian(ylim = ylim, xlim = xlim)
+    }
     
     ##Turn off bg + grid
     g.plot = g.plot + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), panel.background = element_blank(), axis.line = element_line(colour = "black"))
-    
+
     ##legend
     if(!is.character(meta.mat[, strat.factor])){
         ##g.plot = g.plot + scale_colour_gradient(low = '#C6DBEF', high = '#08306B', name = 'ICMvsTE\nmarkers')

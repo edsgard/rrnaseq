@@ -1,4 +1,13 @@
 
+v1.7.3
+*read.rpkm only keeps shared gene-names if several input files with different gene annotations
+*read.rpkm can now handle empty trailing fields in the header
+*get.gene.colormap: changed to using scalar product instead of weighted.mean as to handle negative weights
+*pca.twodim.plot: added xlim and ylim args
+
+v.1.7.1, v1.7.2
+*minor fixes of tab2rds
+
 v1.7.0
 +added tab2rds
 
