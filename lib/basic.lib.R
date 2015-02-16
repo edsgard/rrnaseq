@@ -1,5 +1,32 @@
 
 
+winsorize <- function(x, n.win = 2){
+###Winsorize extreme values
+###Ex: Two most extreme values (from each side):
+###t(apply(ed, 1, winsorize, 2))
+
+    n.vals = length(x)
+    fraction = n.win / n.vals
+    if(length(fraction) != 1 || fraction < 0 || fraction > 0.5){
+        stop("bad value for 'fraction'")
+    }
+
+    win.sorted.ind = order(x)
+    x[win.sorted.ind[1:n.win]] = x[win.sorted.ind[n.win + 1]]
+    x[win.sorted.ind[(n.vals - n.win + 1):n.vals]] = x[win.sorted.ind[n.vals - n.win]]
+
+    ##fraction-based
+    if(0){
+        lim = quantile(x, probs = c(fraction, 1 - fraction))
+
+        ##set extreme values
+        x[ x < lim[1] ] = lim[1]
+        x[ x > lim[2] ] = lim[2]
+    }
+    
+    return(x)
+}
+
 
 pca.twodim.plot <- function(pca, pc.x, pc.y, meta.mat, strat.factor, obs.alpha = 0.9, xlim = NA, ylim = NA){
 

@@ -325,9 +325,11 @@ var.genes.brennecke <- function(count, ercc.raw, meta.mat, out.dir, params, gene
     min.biol.cv2 = params[['min.biol.cv2']]
     min.expr = params[['min.expr']]
     min.cells.expr = params[['min.cells.expr']]
-        
+    n.win = params[['n.win']]
+    
     ##Stats for all cells
-    real.stats = get.real.stats(expr, ercc.fit.res, ercc.size.factors, real.size.factors, min.biol.cv2)
+    win.expr = t(apply(expr, 1, winsorize, n.win))
+    real.stats = get.real.stats(win.expr, ercc.fit.res, ercc.size.factors, real.size.factors, min.biol.cv2)
 
     ##Split cells by strat.factor
     if(!is.data.frame(cell2group)){
@@ -354,9 +356,12 @@ var.genes.brennecke <- function(count, ercc.raw, meta.mat, out.dir, params, gene
         gene2nsamples.expr = apply(expr.subset, 1, function(jgene.rpkm, rpkm.cutoff){length(which(jgene.rpkm > rpkm.cutoff));}, rpkm.cutoff = min.expr)
         rm.genes = names(gene2nsamples.expr)[which(gene2nsamples.expr < min.cells.expr)]
         expr.subset = expr.subset[setdiff(rownames(expr.subset), rm.genes), ]
+
+        ##Winsorize
+        win.expr.subset = t(apply(expr.subset, 1, winsorize, n.win))
         
         #get stats
-        j.real.stats = get.real.stats(expr.subset, ercc.fit.res, ercc.size.factors, real.size.factors.subset, min.biol.cv2)
+        j.real.stats = get.real.stats(win.expr.subset, ercc.fit.res, ercc.size.factors, real.size.factors.subset, min.biol.cv2)
 
         #set removed genes to NA
         rm.genes.mat = matrix(NA, nrow = length(rm.genes), ncol = ncol(j.real.stats), dimnames = list(rm.genes, colnames(j.real.stats)))

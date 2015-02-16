@@ -936,7 +936,7 @@ pca <- function(meta.mat, rpkm, pca.pdf = 'pca.pdf', plot.comp = c(1, 2), log.fc
     ######################
     #PCA
     ######################
-
+    
 
     ###
     #Filter rows (typically genes) with constant values

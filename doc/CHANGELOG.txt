@@ -1,4 +1,6 @@
 
+v.1.8.1
++winsorize, also added to var_genes_brennecke
 
 v1.8.0
 +subset

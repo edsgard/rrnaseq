@@ -137,7 +137,7 @@ echo '#Differential expression analysis' >>rqc.sh
 echo '#########' >>rqc.sh
 
 echo '#Find genes with higher variance than the technical variance (ERCC)' >>rqc.sh
-echo var_genes_brennecke -m meta.rds -c counts.postqc.rds -e ercc.counts.rds -o ${brenneckedir} >>rqc.sh
+echo var_genes_brennecke -w 0 -m meta.rds -c counts.postqc.rds -e ercc.counts.rds -o ${brenneckedir} >>rqc.sh
 
 printf '\n#Heatmap of most variable genes found by var_genes_brennecke\n' >>rqc.sh
 echo head -n100 ${brenneckedir}/rds/genes.ntop_500.txt '>'${brenneckedir}/rds/genes.ntop_100.txt >>rqc.sh

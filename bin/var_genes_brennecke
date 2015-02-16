@@ -31,8 +31,9 @@ spec = matrix(c(
     'quant.cutoff', 'u', 1, 'double',
     'min.cells.expr', 'y', 1, 'numeric',
     'min.expr', 'g', 1, 'double',
-    'quant.min', 'q', 1, 'double',  
-    'lib.file', 'l', 1, 'character',
+    'quant.min', 'q', 1, 'double',
+    'n.win', 'w', 1, 'numeric',
+    'lib.dir', 'l', 1, 'character',
     'help', 'h', 0, 'logical'
 ), byrow=TRUE, ncol=4);
 opt = getopt(spec)
@@ -57,7 +58,8 @@ usage <- function(spec){
     cat(sprintf(" -y min.cells.expr\n\tReal transcripts (not spike-ins) are removed if expressed in less than min.cells.expr samples. Default: 3\n"))
     cat(sprintf(" -g min.expr\n\tMinimum expression level for a gene to be deemed expressed. Default: 1\n"))
     cat(sprintf(" -q quant.min\n\tQuantile of chi-square test-statistica where a line is plotted. Default: 0.025\n"))
-    cat(sprintf(" -l lib.file\n\tLibrary file with required R functions. Default: brennecke.lib.R residing in a subdir '../lib' relative to where this program was executed from.\n\n"))
+    cat(sprintf(" -w n.win\n\tNumber of extreme cells to winsorize (on each side). Default: 2\n"))
+    cat(sprintf(" -l lib.dir\n\tLibrary directory with required R functions. Default: A subdir residing at '../lib' relative to where this program was executed from.\n"))
     q(status=1);
 }
 
@@ -86,14 +88,15 @@ if(is.null(opt[['quant.cutoff']])){opt[['quant.cutoff']] = 0.9;}
 if(is.null(opt[['min.cells.expr']])){opt[['min.cells.expr']] = 3;}
 if(is.null(opt[['min.expr']])){opt[['min.expr']] = 1;}
 if(is.null(opt[['quant.min']])){opt[['quant.min']] = 0.025;}
-if(is.null(opt[['lib.file']])){opt[['lib.file']] = file.path(scriptPath, '../lib', 'brennecke.lib.R');}
+if(is.null(opt[['n.win']])){opt[['n.win']] = 2;}
+if(is.null(opt[['lib.dir']])){opt[['lib.dir']] = file.path(scriptPath, '../lib');}
 
 
 ###
 #Source fcn lib
 ###
-source(opt[['lib.file']], chdir = TRUE)
-
+source(file.path(opt[['lib.dir']], 'brennecke.lib.R'), chdir = TRUE)
+source(file.path(opt[['lib.dir']], 'basic.lib.R'), chdir = TRUE)
 
 ###
 #Read data
