@@ -1,4 +1,50 @@
 
+
+rseq.subset <- function(data.mat, rows.file = NA, cols.file = NA, row.filter = FALSE, col.filter = FALSE){
+
+    
+    ##Rows
+    if(is.character(rows.file)){
+        row.sel = read.table(rows.file, stringsAsFactors = FALSE)[[1]]
+
+        shared.rows = intersect(rownames(data.mat), row.sel)
+        if(length(shared.rows) != length(row.sel)){
+            warning('Some supplied rows do not exist in the data matrix and were excluded')
+        }
+        
+        if(row.filter){
+            keep.rows = setdiff(rownames(data.mat), row.sel)
+        }else{
+            keep.rows = shared.rows
+        }
+
+        ##subset
+        data.mat = data.mat[keep.rows, , drop = FALSE]
+    }
+
+
+    ##Cols
+    if(is.character(cols.file)){
+        col.sel = read.table(cols.file, stringsAsFactors = FALSE)[[1]]
+
+        shared.cols = intersect(colnames(data.mat), col.sel)
+        if(length(shared.cols) != length(col.sel)){
+            warning('Some supplied cols do not exist in the data matrix and were excluded')
+        }
+        
+        if(col.filter){
+            keep.cols = setdiff(colnames(data.mat), col.sel)
+        }else{
+            keep.cols = shared.cols
+        }
+
+        ##subset
+        data.mat = data.mat[, keep.cols, drop = FALSE]
+    }
+
+    return(data.mat)    
+}
+
 get.meta <- function(mapstats.tab.file, meta.file, meta.tab.file){
 
     

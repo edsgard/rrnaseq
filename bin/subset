@@ -1,0 +1,91 @@
+#!/usr/bin/env Rscript
+#subset -i data.rds -o data.subset.rds -r rows.tab -c cols.tab -x -e
+#Row and/or column subsetting
+
+
+###
+#Get opt
+###
+library('getopt')
+
+argv = commandArgs(trailingOnly = F)
+scriptPath = dirname(sub("--file=", "", argv[grep("--file", argv)]))
+#source(file.path(scriptPath, '../lib/getopt.R')) #If one wants to avoid dependency of installed R package (getopt).
+argv = commandArgs(trailingOnly = T)
+
+spec = matrix(c(
+    'data.file', 'i', 1, 'character',
+    'data.filt.file', 'o', 1, 'character',
+    'rows.file', 'r', 1, 'character',
+    'cols.file', 'c', 1, 'character',
+    'row.filter', 'x', 0, 'logical',
+    'col.filter', 'e', 0, 'logical',
+    'lib.dir', 'l', 1, 'character',
+    'help', 'h', 0, 'logical'
+), byrow=TRUE, ncol=4);
+opt = getopt(spec)
+
+usage <- function(spec){
+  cat(getopt(spec, command = 'heatmap', usage=TRUE));
+  cat(sprintf("Subset matrix\n"))
+  cat(sprintf(" -i data.file\n\tInput file in rds-format or tab-separated format, containing a matrix with data values.\n"))
+  cat(sprintf(" -o data.filt.file\n\tOutput file in rds-format, containing matrix with data-values after row and column subsetting. Default: inputfilename.filt.rds\n"))
+  cat(sprintf(" -r rows.file\n\tInput file containing row-names (typically genes) to subset the data matrix with. Default: NA\n"))
+  cat(sprintf(" -c cols.file\n\tInput file containing column-names (typically samples) to subset the data matrix with. Default: NA\n"))
+  cat(sprintf(" -x row.filter\n\tRows in rows.file will be excluded.\n"))
+  cat(sprintf(" -e col.filter\n\tColumns in cols.file will be excluded.\n"))
+  cat(sprintf(" -l lib.dir\n\tLibrary directory with required R functions. Default: A subdir residing at '../lib' relative to where this program was executed from.\n"))
+  q(status=1);
+}
+
+#Print usage if help flag set
+if(!is.null(opt[['help']])){
+  usage(spec)
+}
+
+#Error check that all required options were set
+if(is.null(opt[['data.file']])){warning('Error: "i" is a required option'); usage(spec);}
+
+
+#Set defaults for optional options
+if(is.null(opt[['data.filt.file']])){data.file = opt[['data.file']]; opt[['data.filt.file']] = file.path(dirname(data.file), sub('\\.rds$', '.filt.rds', basename(data.file)));}
+if(is.null(opt[['rows.file']])){opt[['rows.file']] = NA;}
+if(is.null(opt[['cols.file']])){opt[['cols.file']] = NA;}
+if(is.null(opt[['row.filter']])){opt[['row.filter']] = FALSE;}
+if(is.null(opt[['col.filter']])){opt[['col.filter']] = FALSE;}
+if(is.null(opt[['lib.dir']])){opt[['lib.dir']] = file.path(scriptPath, '../lib');}
+
+
+###
+#Source fcn libs
+###
+source(file.path(opt[['lib.dir']], 'main.lib.R'), chdir = TRUE)
+
+
+
+###
+#Read data
+###
+
+#Data matrix
+if(length(grep('\\.rds$', opt[['data.file']])) != 0){
+    data.mat = readRDS(opt[['data.file']])
+}else{
+    data.mat = read.table(opt[['data.file']], stringsAsFactors = FALSE, sep = '\t')
+}
+
+
+###
+#Subset data
+###
+data.filt = rseq.subset(data.mat, opt[['rows.file']], opt[['cols.file']], opt[['row.filter']], opt[['col.filter']])
+
+cat(sprintf('n.rows: %i -> %i\n', nrow(data.mat), nrow(data.filt)))
+cat(sprintf('n.cols: %i -> %i\n', ncol(data.mat), ncol(data.filt)))
+
+
+###
+#Dump
+###
+saveRDS(data.filt, file = opt[['data.filt.file']])
+

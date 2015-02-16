@@ -1,4 +1,8 @@
 
+
+v1.8
++subset
+
 v1.7.3
 *read.rpkm only keeps shared gene-names if several input files with different gene annotations
 *read.rpkm can now handle empty trailing fields in the header

@@ -1,5 +1,6 @@
 
 
+
 pca.twodim.plot <- function(pca, pc.x, pc.y, meta.mat, strat.factor, obs.alpha = 0.9, xlim = NA, ylim = NA){
 
     library('ggplot2')
