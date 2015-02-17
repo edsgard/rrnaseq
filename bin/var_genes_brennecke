@@ -58,7 +58,7 @@ usage <- function(spec){
     cat(sprintf(" -y min.cells.expr\n\tReal transcripts (not spike-ins) are removed if expressed in less than min.cells.expr samples. Default: 3\n"))
     cat(sprintf(" -g min.expr\n\tMinimum expression level for a gene to be deemed expressed. Default: 1\n"))
     cat(sprintf(" -q quant.min\n\tQuantile of chi-square test-statistica where a line is plotted. Default: 0.025\n"))
-    cat(sprintf(" -w n.win\n\tNumber of extreme cells to winsorize (on each side). Default: 2\n"))
+    cat(sprintf(" -w n.win\n\tNumber of extreme cells to winsorize (on each side). Default: 1\n"))
     cat(sprintf(" -l lib.dir\n\tLibrary directory with required R functions. Default: A subdir residing at '../lib' relative to where this program was executed from.\n"))
     q(status=1);
 }
@@ -88,7 +88,7 @@ if(is.null(opt[['quant.cutoff']])){opt[['quant.cutoff']] = 0.9;}
 if(is.null(opt[['min.cells.expr']])){opt[['min.cells.expr']] = 3;}
 if(is.null(opt[['min.expr']])){opt[['min.expr']] = 1;}
 if(is.null(opt[['quant.min']])){opt[['quant.min']] = 0.025;}
-if(is.null(opt[['n.win']])){opt[['n.win']] = 2;}
+if(is.null(opt[['n.win']])){opt[['n.win']] = 1;}
 if(is.null(opt[['lib.dir']])){opt[['lib.dir']] = file.path(scriptPath, '../lib');}
 
 

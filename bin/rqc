@@ -92,6 +92,7 @@ echo sample2ngenes_expr -m meta.rds -r rpkm.rds -o ${pdfdir}/basic/sample2ngenes
 
 printf '\n#Sample distance heatmap\n' >>rqc.sh
 echo sampledist_heatmap -m meta.rds -r rpkm.rds -o ${pdfdir}/sampledist/sample.heatmap.pdf -e sampledist.cor.res.rds -n 10 -k 4 >>rqc.sh
+echo sampledist_heatmap -m meta.rds -r rpkm.rds -o ${pdfdir}/sampledist/sample.heatmap.strat_ngenesexpr.pdf -e sampledist.cor.res.rds -s n.genes.expr >>rqc.sh
 
 printf '\n#Sample distance boxplot\n' >>rqc.sh
 echo sampledist_boxplot -m meta.rds -r rpkm.rds -o ${pdfdir}/sampledist/sample.cor.pdf -q qc.rds -e sampledist.cor.res.rds >>rqc.sh
@@ -104,6 +105,7 @@ echo '#'sample_hclust -m meta.rds -r rpkm.rds -o ${pdfdir}/sampledist/sample.hcl
 
 printf '\n#PCA\n' >>rqc.sh
 echo pca -m meta.rds -r rpkm.rds -o ${pdfdir}/pca/pca.pdf -c $pc_comp >>rqc.sh
+echo pca -m meta.rds -r rpkm.rds -o ${pdfdir}/pca/pca.strat_ngenesexpr.pdf -c $pc_comp -s n.genes.expr >>rqc.sh
 echo pca -m meta.rds -r rpkm.rds -o ${pdfdir}/pca/pca.pdf -c 1,2 >>rqc.sh
 echo pca -m meta.rds -r rpkm.rds -o ${pdfdir}/pca/pca.pdf -c 1 -f -q qc.rds >>rqc.sh
 
@@ -126,10 +128,20 @@ echo gene_filter -m meta.rds -r counts.postqc.rds -o counts.postqc.rds -p FALSE 
 
 
 printf '\n\n#########\n' >>rqc.sh
+echo '#Save as tab-format' >>rqc.sh
+echo '#########' >>rqc.sh
+echo rds2tab -i meta.rds -o meta.tab >>rqc.sh
+echo rds2tab -i rpkm.postqc.rds -o rpkm.postqc.tab >>rqc.sh
+echo rds2tab -i counts.postqc.rds -o counts.postqc.tab >>rqc.sh
+
+
+
+printf '\n\n#########\n' >>rqc.sh
 echo '#Plot ERCC stats' >>rqc.sh
 echo '#########' >>rqc.sh
 echo ercc -m meta.rds -r rpkm.rds -c counts.rds -e ercc.rpkm.rds -d ercc.counts.rds -o ${pdfdir}/ercc/fracadjusted_false >>rqc.sh
 echo ercc -m meta.rds -r rpkm.rds -c counts.rds -e ercc.rpkm.rds -d ercc.counts.rds -f -o ${pdfdir}/ercc/fracadjusted_true >>rqc.sh
+
 
 
 printf '\n\n#########\n' >>rqc.sh
@@ -137,11 +149,26 @@ echo '#Differential expression analysis' >>rqc.sh
 echo '#########' >>rqc.sh
 
 echo '#Find genes with higher variance than the technical variance (ERCC)' >>rqc.sh
+echo '#NB: Suggested to set -w to at least 1, here set to 0 since this test dataset only has 3 cells.' >>rqc.sh
 echo var_genes_brennecke -w 0 -m meta.rds -c counts.postqc.rds -e ercc.counts.rds -o ${brenneckedir} >>rqc.sh
 
-printf '\n#Heatmap of most variable genes found by var_genes_brennecke\n' >>rqc.sh
-echo head -n100 ${brenneckedir}/rds/genes.ntop_500.txt '>'${brenneckedir}/rds/genes.ntop_100.txt >>rqc.sh
-echo heatmap -i rpkm.rds -r ${brenneckedir}/rds/genes.ntop_100.txt -o ${brenneckedir}/pdf/topgenes.heatmap.pdf >>rqc.sh
+printf '\n#Subset on genes that are the most variable across all cells\n' >>rqc.sh
+echo 'ntop=200' >>rqc.sh
+echo head '-${ntop}' ${brenneckedir}/rds/genes.ranked.txt '>'${brenneckedir}/rds/genes.ntop_'${ntop}'.txt >>rqc.sh
+echo subset -i rpkm.postqc.rds -o rpkm.postqc.topvargenes.rds -r ${brenneckedir}/rds/genes.ntop_'${ntop}'.txt >>rqc.sh
+
+
+
+printf '\n\n#########\n' >>rqc.sh
+echo '#Plotting of most variable genes' >>rqc.sh
+echo '#########' >>rqc.sh
+
+printf '\n#Heatmap of most variable genes\n' >>rqc.sh
+echo heatmap -x 0.5 -i rpkm.postqc.topvargenes.rds -o ${brenneckedir}/pdf/heatmap.topvargenes.pdf >>rqc.sh
+
+printf '\n#PCA of most variable genes\n' >>rqc.sh
+echo pca -m meta.rds -r rpkm.postqc.topvargenes.rds -o ${brenneckedir}/pdf/pca.topvargenes.pdf -c 1,2,3 >>rqc.sh
+
 
 
 #########

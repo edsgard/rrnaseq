@@ -1,4 +1,4 @@
-sample	n.reads	read.len	uniq.mapped.prc	multimapping.prc	unmapped.prc	splices	non.canonical.splices	coverage.first.5	mid.5	last.5	junctions	known	partial	novel	id	id.color	nostrat	nostrat.color
-H1007_506_701	7125344	43	58.4121	22.5503	19.04	0	0.0054	0.2962	1.0916	0.7693	12697	92.0847	2.095	5.8203	H1007_506_701	#1B9E77	nostrat	blue
-H1008_506_702	2720777	43	48.5893	21.7762	29.63	0	0.0059	0.2332	1.0117	1.1141	8600	89.7326	1.9419	8.3256	H1008_506_702	#D95F02	nostrat	blue
-H1009_506_703	2021573	43	34.9413	22.4557	42.6	0	0	0.2583	1.0613	0.9366	5555	86.7507	1.6022	11.6472	H1009_506_703	#7570B3	nostrat	blue
+	sample	n.reads	read.len	uniq.mapped.prc	multimapping.prc	unmapped.prc	splices	non.canonical.splices	coverage.first.5	mid.5	last.5	junctions	known	partial	novel	id	id.color	nostrat	nostrat.color	n.genes.expr	n.genes.expr.color
+H1007_506_701	H1007_506_701	7125344	43	58.4121	22.5503	19.04	0	0.0054	0.2962	1.0916	0.7693	12697	92.0847	2.095	5.8203	H1007_506_701	#1B9E77	nostrat	blue	7957	#67000D
+H1008_506_702	H1008_506_702	2720777	43	48.5893	21.7762	29.63	0	0.0059	0.2332	1.0117	1.1141	8600	89.7326	1.9419	8.3256	H1008_506_702	#D95F02	nostrat	blue	7049	#B61318
+H1009_506_703	H1009_506_703	2021573	43	34.9413	22.4557	42.6	0	0	0.2583	1.0613	0.9366	5555	86.7507	1.6022	11.6472	H1009_506_703	#7570B3	nostrat	blue	4408	#FCBBA1

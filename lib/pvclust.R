@@ -5,7 +5,7 @@ pvclust.par <- function(data, method.hclust="average",
                     nboot=1000, r=seq(.5,1.4,by=.1), store=FALSE, weight=FALSE, mc.cores = 1)
   {
 
-  library(doMC)
+  suppressMessages(library(doMC))
   registerDoMC(cores = mc.cores)
   
     # data: (n,p) matrix, n-samples, p-variables

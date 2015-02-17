@@ -5,7 +5,7 @@ rseq.hclust <- function(rpkm, cor.meth, cor.res.list, store.col = 'col', ncores 
     cor.store.col = paste(store.col, 'cor', sep = '.')
     hclust.store.col = paste(store.col, 'hclust', sep = '.')
     
-    if(is.na(cor.res.list)){
+    if(is.logical(cor.res.list)){
 
         #rm cols with constant variance
         rpkm = rm.const.vec(rpkm, row.rm = FALSE)
@@ -83,7 +83,7 @@ get.qc.df <- function(qc.meta.file, meta.mat){
 
 plot.heatmap.sample <- function(cor.res, col.clust, meta.mat, strat.factor, ...){
     
-    library('gplots')
+    suppressMessages(library('gplots'))
     strat.factor.col = paste(strat.factor, '.color', sep = '')
     stratum.col = as.character(meta.mat[colnames(cor.res), strat.factor.col])
     strat.factor2color.map = unique(meta.mat[, c(strat.factor, strat.factor.col)])
@@ -135,7 +135,7 @@ gene2nsamples.expr.filter <- function(rpkm, ncells.cutoff, rpkm.cutoff, ncell.st
 
 plot.gene2nsamples.expr <- function(rpkm, meta.mat, strat.factor, rpkm.cutoff, n.cells.cutoff){
     
-    library('RColorBrewer')
+    suppressMessages(library('RColorBrewer'))
 
     #number of cells with expression per stratum
     gene2nsamples.expr.list = gene2nsamples(rpkm, meta.mat, strat.factor, rpkm.cutoff)
@@ -500,7 +500,7 @@ set.unique.rownames <- function(rpkm){
 
 meta.add.colormaps <- function(meta.mat){
 
-    library('RColorBrewer')
+    suppressMessages(library('RColorBrewer'))
     
     #stage2color
     stages = sort(unique(meta.mat[, 'stage']))
@@ -534,8 +534,8 @@ meta.add.colormaps <- function(meta.mat){
 
 mixcolor.mat <- function(colors.mat, mix.factors, mix.factors.pal){
 ###mix colors (additive mixing)
-    library('colorspace')
-    library('RColorBrewer')
+    suppressMessages(library('colorspace'))
+    suppressMessages(library('RColorBrewer'))
 
     n.factors = length(mix.factors)
 
@@ -639,7 +639,7 @@ get.gene.colormap <- function(j.rpkm, genes2color.list, pad.frac = 0, sum.stat =
 }
 
 add.factor.color <- function(meta.mat, factor, discrete = TRUE, palette.name = 'Dark2', pad.frac = 0){
-    library('RColorBrewer')
+    suppressMessages(library('RColorBrewer'))
     
     if(discrete){
         factors = sort(unique(meta.mat[, factor]))

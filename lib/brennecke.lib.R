@@ -215,9 +215,9 @@ var.genes.brennecke <- function(count, ercc.raw, meta.mat, out.dir, params, gene
     ###
     #Libs
     ###
-    library('DESeq2')
-    library('genefilter')
-    library('statmod')
+    suppressMessages(library('DESeq2'))
+    suppressMessages(library('genefilter'))
+    suppressMessages(library('statmod'))
 
     
     ###
@@ -232,7 +232,7 @@ var.genes.brennecke <- function(count, ercc.raw, meta.mat, out.dir, params, gene
     stats.list.rds = file.path(out.dir, 'rds', 'stats.list.rds')
     stats.mat.rds = file.path(out.dir, 'rds', 'stats.mat.rds')
     stats.mat.tab = file.path(out.dir, 'rds', 'stats.mat.tab')
-    top.genes.file = file.path(out.dir, 'rds', paste('genes.ntop_', params[['n.top']], '.txt', sep = ''))
+    ranked.genes.file = file.path(out.dir, 'rds', 'genes.ranked.txt')
 
     #Create output dirs
     dir.create(dirname(ercc.fit.pdf), recursive = TRUE, showWarnings = FALSE)
@@ -401,8 +401,8 @@ var.genes.brennecke <- function(count, ercc.raw, meta.mat, out.dir, params, gene
     real.stats.list = lapply(real.stats.list, function(x){x[order(x[, 'gene.var.quants'], decreasing = TRUE), ]})
     all.stats.mat = all.stats.mat[order(all.stats.mat[, 'nostrat.gene.var.quants'], decreasing = TRUE), ]
 
-    #get top genes
-    top.genes = all.stats.mat[1:params[['n.top']], 'gene']
+    #ranked genes
+    all.ranked.genes = all.stats.mat[, 'gene']
 
     ##Filter NAs
     real.stats.list = lapply(real.stats.list, function(j.res){j.res[which(!is.na(j.res[, 'mean'])), ]})
@@ -412,7 +412,7 @@ var.genes.brennecke <- function(count, ercc.raw, meta.mat, out.dir, params, gene
     saveRDS(real.stats.list, file = stats.list.rds)
     saveRDS(all.stats.mat, file = stats.mat.rds)    
     write.table(all.stats.mat, quote = FALSE, row.names = FALSE, sep = '\t', file = stats.mat.tab)
-    write.table(top.genes, quote = FALSE, row.names = FALSE, col.names = FALSE, file = top.genes.file)
+    write.table(all.ranked.genes, quote = FALSE, row.names = FALSE, col.names = FALSE, file = ranked.genes.file)
 
                 
     ############

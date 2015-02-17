@@ -30,7 +30,7 @@ winsorize <- function(x, n.win = 2){
 
 pca.twodim.plot <- function(pca, pc.x, pc.y, meta.mat, strat.factor, obs.alpha = 0.9, xlim = NA, ylim = NA){
 
-    library('ggplot2')
+    suppressMessages(library('ggplot2'))
 
     ##get PC basis
     pca.basis = pca[['x']]
@@ -82,7 +82,7 @@ pca.twodim.plot <- function(pca, pc.x, pc.y, meta.mat, strat.factor, obs.alpha =
 pca.biplot <- function(pca, pc.x = "PC1", pc.y = "PC2", plot.vars, meta.mat, obs.color.col = NA, obs.alpha = 0.9, var.size = 1.5, var.alpha = 0.85, var.colors = '#DE2D26') {
 ###pca is an object from prcomp
 
-    library('ggplot2')
+    suppressMessages(library('ggplot2'))
     
     ##Observations
     pca.basis = pca[['x']]
@@ -141,7 +141,7 @@ pca.biplot <- function(pca, pc.x = "PC1", pc.y = "PC2", plot.vars, meta.mat, obs
 
 rrnaseq.combat <- function(data.mat, meta.mat, batch.factor){
 
-    library('sva')
+    suppressMessages(library('sva'))
     
     ##Filter out singletons
     batch = meta.mat[, batch.factor]
@@ -212,8 +212,8 @@ filter.col <- function(sig.res, filt.cutoff, filt.col = 'log2.fc', abs.bool = TR
 bigcor.par <- function(MAT, nblocks = 10, verbose = TRUE, ncores=20, yMAT = NA, ...){
 #https://gist.github.com/bobthecat/5024079
     
-  library(ff, quietly = TRUE)
-  library(doMC)
+  suppressMessages(library(ff, quietly = TRUE))
+  suppressMessages(library(doMC))
   
   if(ncores=="all"){
       ncores = multicore:::detectCores()

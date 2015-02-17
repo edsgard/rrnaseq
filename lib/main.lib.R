@@ -125,7 +125,7 @@ get.expr <- function(rpkm.files, rpkm.rsync.out.dir, rpkm.cloud.out.dir, meta.fi
     rpkm.counts.list = read.rpkm(rpkm.files)
 
     #Subset/crosscheck against cells present in meta.mat
-    if(!is.na(meta.file)){
+    if(!is.logical(meta.file)){
         
         meta.mat = readRDS(meta.file)    
         file.samples = colnames(rpkm.counts.list[['rpkm']])
@@ -162,7 +162,7 @@ get.expr <- function(rpkm.files, rpkm.rsync.out.dir, rpkm.cloud.out.dir, meta.fi
 
 mapstats <- function(meta.file, counts.file, res.dir, strat.factor = 'nostrat', cex = 0.8, qc.meta.file, mapped.prc.cutoff, nreads.cutoff, filter.bool, plot.bool){
 
-    library('RColorBrewer')
+    suppressMessages(library('RColorBrewer'))
 
     #Hardcoded params
     pdf.w = 20
@@ -386,7 +386,7 @@ mapstats <- function(meta.file, counts.file, res.dir, strat.factor = 'nostrat', 
 
 expr.dhist <- function(meta.mat, rpkm, exprdist.pdf, strat.factor, log.fcn = get('log10'), strat.plot = FALSE){
 
-    library('RColorBrewer')
+    suppressMessages(library('RColorBrewer'))
     
     #Create output dir    
     dir.create(dirname(exprdist.pdf), showWarnings = FALSE, recursive = TRUE)
@@ -438,7 +438,7 @@ gene.filter <- function(meta.file, rpkm.file, rpkm.postqc.file, gene2nsamples.pd
 sample2ngenes.expr <- function(rpkm, meta.mat, sample2ngenes.pdf, log.rpkm.cutoff, n.genes.cutoff, qc.meta.mat, filter.bool, plot.bool, meta.add, strat.factor = 'nostrat'){
 
 
-    library('RColorBrewer')
+    suppressMessages(library('RColorBrewer'))
 
     #Params
     rpkm.cutoff = 10^(log.rpkm.cutoff)
@@ -536,7 +536,7 @@ sample2ngenes.expr <- function(rpkm, meta.mat, sample2ngenes.pdf, log.rpkm.cutof
 
 sampledist.heatmap <- function(meta.mat, rpkm, sample.heatmap.pdf = 'sample.heatmap.pdf', strat.factor = 'nostrat', cor.meth = 'spearman', cex.sample = 0.7, cor.res.list = NA, ncores = 1, nblocks = 1, rm.diag = TRUE, log.fcn = get('log10'), ...){
 
-    library('RColorBrewer')
+    suppressMessages(library('RColorBrewer'))
 
     #Create output dir    
     dir.create(dirname(sample.heatmap.pdf), showWarnings = FALSE, recursive = TRUE)
@@ -551,7 +551,7 @@ sampledist.heatmap <- function(meta.mat, rpkm, sample.heatmap.pdf = 'sample.heat
     #Sample-distance heatmap
     #######################
 
-    if(is.na(cor.res.list)){
+    if(is.logical(cor.res.list)){
 
         #rm cols with constant variance
         const.cols = which(apply(rpkm, 2, function(x){var(x) == 0}))
@@ -621,7 +621,7 @@ sampledist.heatmap <- function(meta.mat, rpkm, sample.heatmap.pdf = 'sample.heat
 sampledist.boxplot <- function(meta.mat, rpkm, sample.cor.pdf, qc.meta.file, cor.meth, max.cor.cutoff, strat.factor = 'nostrat', cex.axis, filter.bool, plot.bool, cor.res.list = NA, ...){
 
 
-    library('RColorBrewer')
+    suppressMessages(library('RColorBrewer'))
 
     ###
     #Params
@@ -644,7 +644,7 @@ sampledist.boxplot <- function(meta.mat, rpkm, sample.cor.pdf, qc.meta.file, cor
     ######################
     #Plot boxplot of pairwise correlations for each sample
 
-    if(is.na(cor.res.list)){
+    if(is.logical(cor.res.list)){
 
         #rm cols with constant variance
         const.cols = which(apply(rpkm, 2, function(x){var(x) == 0}))
@@ -773,7 +773,7 @@ sampledist.boxplot <- function(meta.mat, rpkm, sample.cor.pdf, qc.meta.file, cor
 sample.hclust <- function(meta.file, rpkm.file, sample.hclust.pdf, cor.meth, n.boot, strat.factor, ind.factor, cex, cor.res.list = NA, ...){
 
 
-    library('RColorBrewer')
+    suppressMessages(library('RColorBrewer'))
 
     ###
     #Params
@@ -800,8 +800,8 @@ sample.hclust <- function(meta.file, rpkm.file, sample.hclust.pdf, cor.meth, n.b
 
     
     if(n.boot == 0){
-        library('moduleColor') #depends on lib 'impute' which is not available in R>=3. Install impute via biocLite.
-        library('graphics') #dendrapply
+        suppressMessages(library('moduleColor')) #depends on lib 'impute' which is not available in R>=3. Install impute via biocLite.
+        suppressMessages(library('graphics')) #dendrapply
 
         #########################
         #Sample hierarchical clustering w/o bootstrap
@@ -809,7 +809,7 @@ sample.hclust <- function(meta.file, rpkm.file, sample.hclust.pdf, cor.meth, n.b
         #colored labels in dendrogram: plotColoredClusters {ClassDiscovery} (#not available for R>=3. also e.g. (PerturbationClusterTest)); dendextend; dendrapply{graphics}    
 
 
-        if(is.na(cor.res.list)){
+        if(is.logical(cor.res.list)){
             
             #rm cols with constant variance
             const.cols = which(apply(rpkm, 2, function(x){var(x) == 0}))
@@ -899,7 +899,7 @@ sample.hclust <- function(meta.file, rpkm.file, sample.hclust.pdf, cor.meth, n.b
         pvclust.res = pvclust(rpkm, method.dist = cor.dist.fcn, nboot = n.boot)
         
         #dump
-        if(is.na(cor.res.list)){
+        if(is.logical(cor.res.list)){
             cor.res.list = list(pvclust.res = pvclust.res)
         }else{
             cor.res.list = c(cor.res.list, list(pvclust.res = pvclust.res))
@@ -919,7 +919,7 @@ sample.hclust <- function(meta.file, rpkm.file, sample.hclust.pdf, cor.meth, n.b
 
 pca <- function(meta.mat, rpkm, pca.pdf = 'pca.pdf', plot.comp = c(1, 2), log.fcn = get('log10'), pc.cutoff = 0, filter.bool = FALSE, gt.bool = FALSE, qc.meta.file = 'qc.meta.rds', strat.factor = 'nostrat', point.cex = 0.4){
     
-    library('RColorBrewer')
+    suppressMessages(library('RColorBrewer'))
     
     ###
     #Params
@@ -1064,7 +1064,7 @@ scatter <- function(data.file, scatter.pdf, samples, transpose, log.fcn){
     data.mat = readRDS(data.file)
 
     #Set default if samples not set
-    if(is.na(samples)){samples = colnames(data.mat);}
+    if(is.logical(samples)){samples = colnames(data.mat);}
 
     #Create output dir    
     dir.create(dirname(scatter.pdf), showWarnings = FALSE, recursive = TRUE)
@@ -1105,8 +1105,8 @@ rseq.heatmap <- function(data.mat, cor.meth = 'spearman', meta.mat = NA, strat.h
 # marker2color.map = unique(feat.annot[, c('marker', 'marker.color')])
 
     
-    library('marray') #maPalette
-    library('gplots')
+    suppressMessages(library('marray')) #maPalette
+    suppressMessages(library('gplots'))
 
 
     ###
@@ -1156,7 +1156,7 @@ rseq.heatmap <- function(data.mat, cor.meth = 'spearman', meta.mat = NA, strat.h
     ###
     #Set default colormap if col.pal == NA
     ###
-    if(is.na(col.pal)){
+    if(is.logical(col.pal)){
         if(colorpad){
             pad.len = 20
     
@@ -1174,7 +1174,7 @@ rseq.heatmap <- function(data.mat, cor.meth = 'spearman', meta.mat = NA, strat.h
     ###
     #Colorbars
     ###
-    meta.col.bar = !is.na(meta.mat) & !is.na(strat.heat.factor) & is.na(ColSideColors)
+    meta.col.bar = !is.logical(meta.mat) & !is.logical(strat.heat.factor) & is.logical(ColSideColors)
     if(meta.col.bar){
         color.col = paste(strat.heat.factor, 'color', sep = '.')
         samples = colnames(data.mat)
@@ -1188,7 +1188,7 @@ rseq.heatmap <- function(data.mat, cor.meth = 'spearman', meta.mat = NA, strat.h
     ###
     #Plot
     ###
-    if(is.na(ColSideColors)){
+    if(is.logical(ColSideColors)){
         heatmap.2(data.mat, Colv = col.dendro, Rowv = row.dendro, col = col.pal, trace = 'none', ...)
     }else{
         heatmap.2(data.mat, Colv = col.dendro, Rowv = row.dendro, col = col.pal, trace = 'none', ColSideColors = ColSideColors, ...)
@@ -1219,9 +1219,11 @@ sample.filter <- function(data.file, qc.meta.file, out.file, filter.cols){
     #Create output dir    
     dir.create(dirname(out.file), showWarnings = FALSE, recursive = TRUE)
     
-    #Get samples to filter
-    if(filter.cols == 'all'){
-        filter.cols = colnames(qc.mat)
+    ##Get samples to filter
+    if(length(filter.cols) == 1){
+        if(filter.cols == 'all'){
+            filter.cols = colnames(qc.mat)
+        }
     }
     fail.samples = rownames(qc.mat)[which(apply(qc.mat[, filter.cols, drop = FALSE], 1, function(jrow){any(jrow == 1)}))]
     pass.samples = setdiff(colnames(data.mat), fail.samples)
