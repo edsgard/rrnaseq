@@ -1,5 +1,11 @@
 
-v.1.8.1
+v1.8.2
+*var_genes_brennecke: dump all genes by ranking
+*rqc: added subsetting of most variable genes and strat by n.genes.expr
+*suppressMessages when loading libs
+*if(is.na) -> if(is.logical)
+
+v1.8.1
 +winsorize, also added to var_genes_brennecke
 
 v1.8.0
