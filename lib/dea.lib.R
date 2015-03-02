@@ -1,4 +1,4 @@
-#Differential expression analysis
+###Differential expression analysis
 
 
 run.samseq <- function(meta.mat, counts, class.factor, factor.contrasts, alpha = 1){

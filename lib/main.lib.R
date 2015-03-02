@@ -1109,6 +1109,12 @@ rseq.heatmap <- function(data.mat, cor.meth = 'spearman', meta.mat = NA, strat.h
     suppressMessages(library('gplots'))
 
 
+    ##*##
+    ##Coerce to matrix
+    ##*##
+    data.mat = as.matrix(data.mat)
+    
+    
     ###
     #Log
     ###
