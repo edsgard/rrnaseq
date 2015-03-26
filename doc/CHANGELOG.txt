@@ -1,4 +1,10 @@
 
+v.1.8.4
+*brennecke: winsorize: set n.win to n.col - 1 if n.col >= n.win
+
+v.1.8.3
+*heatmap: coerce to matrix
+
 v1.8.2
 *var_genes_brennecke: dump all genes by ranking
 *rqc: added subsetting of most variable genes and strat by n.genes.expr

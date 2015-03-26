@@ -358,8 +358,12 @@ var.genes.brennecke <- function(count, ercc.raw, meta.mat, out.dir, params, gene
         expr.subset = expr.subset[setdiff(rownames(expr.subset), rm.genes), ]
 
         ##Winsorize
-        win.expr.subset = t(apply(expr.subset, 1, winsorize, n.win))
-        
+        if(n.win >= ncol(expr.subset)){
+            n.new.win = ncol(expr.subset) - 1
+            win.expr.subset = t(apply(expr.subset, 1, winsorize, n.new.win))
+        }else{
+            win.expr.subset = t(apply(expr.subset, 1, winsorize, n.win))
+        }
         #get stats
         j.real.stats = get.real.stats(win.expr.subset, ercc.fit.res, ercc.size.factors, real.size.factors.subset, min.biol.cv2)
 
