@@ -1,5 +1,5 @@
 
-plot.cv2vsmean <- function(real.stats, ercc.stats, tech.fit.res, sel.genes, sel.highlight = TRUE){
+plot.cv2vsmean <- function(real.stats, ercc.stats, tech.fit.res, sel.genes, sel.highlight = TRUE, plot.ercc.points = TRUE){
 #plot.cv2vsmean(real.stats, ercc.stats, ercc.fit.res, sel.genes, sel.highlight = sel.highlight)
     
     #get gene summary stats
@@ -58,8 +58,10 @@ plot.cv2vsmean <- function(real.stats, ercc.stats, tech.fit.res, sel.genes, sel.
     #Add a curve showing the expectation for the chosen biological CV^2 threshold
     lines(log10(xg), log10(psia1theta/xg + a0 + min.biol.cv2), lty="dashed", col="#C0007090", lwd=3 )
     
-    #Add the normalised ERCC points
-    points(log10(ercc.gene.means), log10(ercc.gene.cv2), pch=20, cex=1, col="black")
+    ##Add the normalised ERCC points
+    if(plot.ercc.points){
+        points(log10(ercc.gene.means), log10(ercc.gene.cv2), pch=20, cex=1, col="black")
+    }
 
 }    
 
@@ -192,7 +194,7 @@ ercc.filter <- function(ercc.raw, n.ercc.min, min.count, min.prop){
     ercc.raw = ercc.raw[, pass.samples]
         
     #For each cell, proportion of expressed transcripts > min.rpkm should be greater than min.prop
-    ercc.ind = which(apply(ercc.raw, 2, function(j.ercc){j.ercc = j.ercc[which(j.ercc != 0)]; prop.expr = length(which(j.ercc > min.count)) / length(j.ercc); return(prop.expr >= min.prop)}))
+    ercc.ind = which(apply(ercc.raw, 2, function(j.ercc, min.count){j.ercc = j.ercc[which(j.ercc != 0)]; prop.expr = length(which(j.ercc > min.count)) / length(j.ercc); return(prop.expr >= min.prop)}, min.count = min.count))
     pass.samples = names(ercc.ind)    
     length(pass.samples) #352
 
@@ -209,7 +211,7 @@ ercc.filter <- function(ercc.raw, n.ercc.min, min.count, min.prop){
     return(ercc.raw)
 }
 
-var.genes.brennecke <- function(count, ercc.raw, meta.mat, out.dir, params, genes.subset = NA, cell2group = NA){
+var.genes.brennecke <- function(count, ercc.raw, meta.mat, out.dir, params, genes.subset = NA, cell2group = NA, plot.ercc.points = TRUE){
 
     
     ###
@@ -357,10 +359,14 @@ var.genes.brennecke <- function(count, ercc.raw, meta.mat, out.dir, params, gene
         rm.genes = names(gene2nsamples.expr)[which(gene2nsamples.expr < min.cells.expr)]
         expr.subset = expr.subset[setdiff(rownames(expr.subset), rm.genes), ]
 
+        print(sprintf('Dataset dim: %i', dim(expr.subset)))
+        
         ##Winsorize
-        if(n.win >= ncol(expr.subset)){
-            n.new.win = ncol(expr.subset) - 1
-            win.expr.subset = t(apply(expr.subset, 1, winsorize, n.new.win))
+        if(n.win >= (ncol(expr.subset) - 1)){
+            n.new.win = ncol(expr.subset) - 2
+            if(n.new.win >= 1){
+                win.expr.subset = t(apply(expr.subset, 1, winsorize, n.new.win))
+            }
         }else{
             win.expr.subset = t(apply(expr.subset, 1, winsorize, n.win))
         }
@@ -471,20 +477,22 @@ var.genes.brennecke <- function(count, ercc.raw, meta.mat, out.dir, params, gene
         sel.highlight = FALSE
         j.cv2vsmean.pdf = sub('cv2vsmean', paste('cv2vsmean.selhighlight_', sel.highlight, sep = ''), stage.cv2vsmean.pdf)        
         pdf(j.cv2vsmean.pdf)
-        plot.cv2vsmean(real.stats, ercc.stats, ercc.fit.res, sel.genes, sel.highlight = sel.highlight)
+        plot.cv2vsmean(real.stats, ercc.stats, ercc.fit.res, sel.genes, sel.highlight = sel.highlight, plot.ercc.points)
         dev.off()
 
         sel.highlight = TRUE
         j.cv2vsmean.pdf = sub('cv2vsmean', paste('cv2vsmean.selhighlight_', sel.highlight, '.top_', n.top, sep = ''), stage.cv2vsmean.pdf)
         pdf(j.cv2vsmean.pdf)
-        plot.cv2vsmean(real.stats, ercc.stats, ercc.fit.res, sel.genes, sel.highlight = sel.highlight)
+        plot.cv2vsmean(real.stats, ercc.stats, ercc.fit.res, sel.genes, sel.highlight = sel.highlight, plot.ercc.points)
         dev.off()
 
-        sel.highlight = TRUE
-        j.cv2vsmean.pdf = sub('cv2vsmean', paste('cv2vsmean.selhighlight_', sel.highlight, '.alpha_', alpha, sep = ''), stage.cv2vsmean.pdf)
-        pdf(j.cv2vsmean.pdf)
-        plot.cv2vsmean(real.stats, ercc.stats, ercc.fit.res, sig.genes, sel.highlight = sel.highlight)
-        dev.off()
+        if(length(sig.genes) > 0){
+            sel.highlight = TRUE
+            j.cv2vsmean.pdf = sub('cv2vsmean', paste('cv2vsmean.selhighlight_', sel.highlight, '.alpha_', alpha, sep = ''), stage.cv2vsmean.pdf)
+            pdf(j.cv2vsmean.pdf)
+            plot.cv2vsmean(real.stats, ercc.stats, ercc.fit.res, sig.genes, sel.highlight = sel.highlight, plot.ercc.points)
+            dev.off()
+        }
     }
 
             

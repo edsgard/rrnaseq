@@ -633,10 +633,6 @@ sampledist.boxplot <- function(meta.mat, rpkm, sample.cor.pdf, qc.meta.file, cor
     cor.max.dens.pdf = file.path(sample.cor.pdf.dir, sub('cor', paste('cor', cor.meth, 'max.dens', sep = '.'), sample.cor.pdf.base))
 
     
-    ###
-    #Filter data
-    ###
-    meta.mat.filt = meta.mat[colnames(rpkm), ]
     
     
     ######################
@@ -684,10 +680,9 @@ sampledist.boxplot <- function(meta.mat, rpkm, sample.cor.pdf, qc.meta.file, cor
     col.cor.noone[which(col.cor.noone > 0.99)] = NA
     max.cor = apply(col.cor.noone, 2, max, na.rm = TRUE)
     max.cor = sort(max.cor)
-
+          
     #filter meta.mat
-    meta.mat.filt = meta.mat[names(max.cor), ]
-
+    meta.mat.filt = meta.mat[intersect(rownames(meta.mat), names(max.cor)), ]
     
     if(plot.bool){
 
@@ -697,7 +692,7 @@ sampledist.boxplot <- function(meta.mat, rpkm, sample.cor.pdf, qc.meta.file, cor
         ###
         #Boxplots of all pairwise cors per sample
         ###
-
+        
         #Order by median correlation
         median.cor = apply(col.cor, 2, median)
         median.cor = sort(median.cor)
@@ -706,7 +701,7 @@ sampledist.boxplot <- function(meta.mat, rpkm, sample.cor.pdf, qc.meta.file, cor
         pdf(cor.boxplot.pdf)
         boxplot(col.cor[, names(median.cor)], las = 2, cex.axis = cex.axis)
         dev.off()
-
+        
         ###
         #Plot histogram of max.cor
         ###
@@ -715,20 +710,20 @@ sampledist.boxplot <- function(meta.mat, rpkm, sample.cor.pdf, qc.meta.file, cor
         strat2sample.list = tapply(meta.mat.filt[, 'id'], meta.mat.filt[, strat.factor], unique)
         strata = names(strat2sample.list)
         n.strata = length(strata)
-
+        
         #densities per stratum
         strat2maxcor.dens.list = lapply(strat2sample.list, function(jstrat.samples, max.cor){density(max.cor[jstrat.samples])}, max.cor = max.cor)
 
-        #get ranges
+        ##get ranges
         xlim = range(unlist(lapply(strat2maxcor.dens.list, '[[', 'x')))
         ylim = range(unlist(lapply(strat2maxcor.dens.list, '[[', 'y')))
 
         #colormap
         strat.factor.col = paste(strat.factor, '.color', sep = '')
-        strat.factor2color.map = unique(meta.mat.filt[, c(strat.factor, strat.factor.col)])
+        strat.factor2color.map = unique(meta.mat.filt[, c(strat.factor, strat.factor.col)])        
         strat.factor2color.map = strat.factor2color.map[order(strat.factor2color.map[, strat.factor]), ]
         rownames(strat.factor2color.map) = strat.factor2color.map[, strat.factor]
-
+        
         #plot
         pdf(cor.max.dens.pdf)
         j.stratum.it = 1
@@ -1157,8 +1152,9 @@ rseq.heatmap <- function(data.mat, cor.meth = 'spearman', meta.mat = NA, strat.h
     #get dendrogram
     row.dendro = as.dendrogram(cor.res.list[['row.hclust']])
     row.dendro = reorder(row.dendro, rowMeans(data.mat, na.rm = TRUE))
-
-
+    cor.res.list[['row.dendro']] = row.dendro
+    
+    
     ###
     #Set default colormap if col.pal == NA
     ###

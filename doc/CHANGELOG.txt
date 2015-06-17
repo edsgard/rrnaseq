@@ -1,6 +1,10 @@
 
 v.1.8.4
+*brennecke: added boolean argument for plotting ERCC points
 *brennecke: winsorize: set n.win to n.col - 1 if n.col >= n.win
+*pca plots: allow factor strat.factor
+*rseq.hclust: allow Euclidean distance method
+*sampledist.boxplot: intersect with meta rownames when subsetting meta
 
 v.1.8.3
 *heatmap: coerce to matrix

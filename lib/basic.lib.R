@@ -62,17 +62,19 @@ pca.twodim.plot <- function(pca, pc.x, pc.y, meta.mat, strat.factor, obs.alpha =
     g.plot = g.plot + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), panel.background = element_blank(), axis.line = element_line(colour = "black"))
 
     ##legend
-    if(!is.character(meta.mat[, strat.factor])){
+    if(!is.character(meta.mat[, strat.factor]) && !is.factor(meta.mat[, strat.factor])){
         ##g.plot = g.plot + scale_colour_gradient(low = '#C6DBEF', high = '#08306B', name = 'ICMvsTE\nmarkers')
         ##g.plot = g.plot + scale_colour_gradientn(colours = c('#C6DBEF', '#C6DBEF', '#08306B', '#08306B'), values = c(0, 0.3, 0.7, 1), name = 'ICMvsTE\nmarkers')
         g.plot = g.plot + scale_colour_gradient2()
         ##custom: scale_colour_gradient(palette = )
     }else{
-
         strat.factor.col = paste(strat.factor, '.color', sep = '')
         strat2col.map = unique(meta.mat[, c(strat.factor, strat.factor.col)])
         strat2col.map = strat2col.map[order(strat2col.map[, strat.factor]), ]
-
+        if(is.factor(meta.mat[, strat.factor])){
+            strat2col.map = strat2col.map[levels(meta.mat[, strat.factor]), ]
+        }
+        
         g.plot = g.plot + scale_colour_manual(breaks = strat2col.map[, strat.factor], values = strat2col.map[, strat.factor.col])
     }
     
@@ -118,7 +120,7 @@ pca.biplot <- function(pca, pc.x = "PC1", pc.y = "PC2", plot.vars, meta.mat, obs
     g.plot = g.plot + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), panel.background = element_blank(), axis.line = element_line(colour = "black"))
 
     ##Legend
-    if(!is.character(meta.mat[, obs.color.col])){
+    if(!is.character(meta.mat[, obs.color.col]) && !is.factor(meta.mat[, obs.color.col])){
         ##g.plot = g.plot + scale_colour_gradient(low = '#C6DBEF', high = '#08306B', name = 'ICMvsTE\nmarkers')
         ##g.plot = g.plot + scale_colour_gradientn(colours = c('#C6DBEF', '#C6DBEF', '#08306B', '#08306B'), values = c(0, 0.3, 0.7, 1), name = 'ICMvsTE\nmarkers')
         g.plot = g.plot + scale_colour_gradient2()
@@ -128,6 +130,9 @@ pca.biplot <- function(pca, pc.x = "PC1", pc.y = "PC2", plot.vars, meta.mat, obs
         strat.factor.color.col = paste(obs.color.col, '.color', sep = '')
         strat2col.map = unique(meta.mat[, c(obs.color.col, strat.factor.color.col)])
         strat2col.map = strat2col.map[order(strat2col.map[, obs.color.col]), ]
+        if(is.factor(meta.mat[, obs.color.col])){
+            strat2col.map = strat2col.map[levels(meta.mat[, obs.color.col]), ]
+        }
 
         g.plot = g.plot + scale_colour_manual(breaks = strat2col.map[, obs.color.col], values = strat2col.map[, strat.factor.color.col])
     }
@@ -370,7 +375,7 @@ plot.pairs.pca <- function(pca.basis, e.var, meta.mat = NA, factor.color = 'stag
         cell.color.col = paste(factor.color, 'color', sep = '.')
         cell.color = meta.mat[, cell.color.col]
         
-        if(is.character(meta.mat[, factor.color])){ #else numeric values on contiounous
+        if(is.character(meta.mat[, factor.color]) || is.factor(meta.mat[, factor.color])){ #else numeric values on contiounous
             
             color.legend = TRUE            
             n.mixed = length(grep('; color: ', meta.mat[, factor.color]))
@@ -380,9 +385,18 @@ plot.pairs.pca <- function(pca.basis, e.var, meta.mat = NA, factor.color = 'stag
             }else{            
                 cell2color.map = unique(meta.mat[, c(factor.color, cell.color.col)])
             }
-            cell2color.map = cell2color.map[order(cell2color.map[, factor.color]), ]
+
+            ##order and labels
+            if(is.factor(meta.mat[, factor.color])){
+                color.levels = levels(meta.mat[, factor.color])
+                cell2color.map = cell2color.map[color.levels, ]
+                cell2color.map.labels = color.levels
+            }else{
+                cell2color.map = cell2color.map[order(cell2color.map[, factor.color]), ]
+                cell2color.map.labels = cell2color.map[, factor.color]
+            }
+            
             cell2color.map.col = cell2color.map[, cell.color.col]
-            cell2color.map.labels = cell2color.map[, factor.color]
         }
     }else{
         cell.color = par('col')

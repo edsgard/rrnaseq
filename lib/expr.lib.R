@@ -9,14 +9,23 @@ rseq.hclust <- function(rpkm, cor.meth, cor.res.list, store.col = 'col', ncores 
 
         #rm cols with constant variance
         rpkm = rm.const.vec(rpkm, row.rm = FALSE)
-        
-        #Pairwise dist btw columns
-        cor.res = bigcor.par(rpkm, use="pairwise.complete.obs", method = cor.meth, ncores = ncores, nblocks = nblocks)
+
+        ##dist
+        if(cor.meth == 'euclidean'){
+            cor.res = NA
+            col.dist.mat = dist(t(rpkm), method = cor.meth)
+        }else{
+            ##Pairwise dist btw columns
+            cor.res = bigcor.par(rpkm, use="pairwise.complete.obs", method = cor.meth, ncores = ncores, nblocks = nblocks)
     
-        #get dist and hclust 
-        col.dist.mat = as.dist(((cor.res * -1) + 1) / 2)
+            ##get dist and hclust 
+            col.dist.mat = as.dist(((cor.res * -1) + 1) / 2)
+        }
+
+        ##hclust
         clust.res = hclust(col.dist.mat)
 
+        ##dump
         cor.res.list = list()
         cor.res.list[[cor.store.col]] = cor.res
         cor.res.list[[hclust.store.col]] = clust.res
@@ -584,6 +593,23 @@ mixcolor.mat <- function(colors.mat, mix.factors, mix.factors.pal){
     colnames(colors.mat)[(ncol(colors.mat) - 1):ncol(colors.mat)] = c(mixed.factor, mixed.color.col)
 
     return(colors.mat)
+}
+
+handle.neg.values <- function(rpkm){
+##Shift by min(data.mat). Neg values introduced by combat.
+    
+    ##Handle negative values
+    if(min(rpkm, na.rm = T) < 0){
+
+        ##shift with minimum value
+        min.rpkm = min(rpkm, na.rm = TRUE)
+        rpkm = rpkm + abs(min.rpkm)
+
+        ##Set NA values to 0
+        rpkm[is.na(rpkm)] = 0
+    }
+
+    return(rpkm)
 }
 
 get.gene.colormap <- function(j.rpkm, genes2color.list, pad.frac = 0, sum.stat = 'median'){    
