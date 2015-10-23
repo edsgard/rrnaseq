@@ -138,6 +138,17 @@ if(!is.na(opt[['meta.file']])){
     meta.mat = NA
 }
 
+#Gene meta
+if(!is.na(opt[['gene.meta.file']])){
+    if(length(grep('\\.rds$', opt[['gene.meta.file']])) != 0){
+        gene.meta = readRDS(opt[['gene.meta.file']])
+    }else{
+        gene.meta = read.table(opt[['gene.meta.file']], stringsAsFactors = FALSE, sep = '\t')
+    }
+}else{
+    gene.meta = NA
+}
+
 
 ###
 #Subset data
