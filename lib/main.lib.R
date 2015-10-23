@@ -1209,9 +1209,12 @@ rseq.heatmap <- function(data.mat, cor.meth = 'spearman', meta.mat = NA, strat.h
       heatmap.2(data.mat, Colv = col.dendro, Rowv = row.dendro, col = col.pal, trace = 'none', ColSideColors = ColSideColors, RowSideColors = RowSideColors, ...)
     }
     if(meta.col.bar){
-        legend('topright', legend = sample2color.map[, strat.heat.factor], col = sample2color.map[, color.col], lty = 1)
+        legend('topright', legend = sample2color.map[, strat.heat.factor], col = sample2color.map[, color.col], lty = 2)
     }
-
+    if(gene.color.bar){
+      legend('bottomleft', legend = gene2color.map[, gene.col.factor], col = gene2color.map[, color.col.gene], lty = 2)
+    }
+    
     return(cor.res.list)
 }
 
