@@ -1090,7 +1090,7 @@ scatter <- function(data.file, scatter.pdf, samples, transpose, log.fcn){
     dev.off()
 }
 
-rseq.heatmap <- function(data.mat, cor.meth = 'spearman', meta.mat = NA, strat.heat.factor = NA, log.fcn = log10, cor.res.list = NA, colorpad = FALSE, ColSideColors = NA, col.pal = NA, ncores = 1, nblocks = 1, cluster.col = TRUE, ...){ 
+rseq.heatmap <- function(data.mat, cor.meth = 'spearman', meta.mat = NA, strat.heat.factor = NA, gene.meta = NA, gene.col.factor=NA, log.fcn = log10, cor.res.list = NA, colorpad = FALSE, ColSideColors = NA, RowSideColors = NA, col.pal = NA, ncores = 1, nblocks = 1, cluster.col = TRUE, ...){ 
 # cexRow = 0.2 #500 rows: 0.2
 # cexCol = 0.2 #500 cols: 0.2
 #Colorbars
@@ -1186,19 +1186,35 @@ rseq.heatmap <- function(data.mat, cor.meth = 'spearman', meta.mat = NA, strat.h
         sample2color.map = sample2color.map[order(sample2color.map[, strat.heat.factor]), ]
     }
 
+    gene.color.bar = !is.logical(gene.meta) & !is.logical(gene.col.factor) & is.logical(RowSideColors)
+    if(gene.color.bar){
+      color.col.gene = paste(gene.col.factor, 'color', sep = '.')
+      genes = rownames(data.mat)
+      gene.meta = gene.meta[genes, ]
+      RowSideColors = as.character(gene.meta[, color.col.gene])
+      gene2color.map = unique(gene.meta[, c(gene.col.factor, color.col.gene)])
+      gene2color.map = gene2color.map[order(gene2color.map[, gene.col.factor]), ]
+    }
 
     ###
     #Plot
     ###
-    if(is.logical(ColSideColors)){
-        heatmap.2(data.mat, Colv = col.dendro, Rowv = row.dendro, col = col.pal, trace = 'none', ...)
+    if(is.logical(ColSideColors) & is.logical(RowSideColors)){
+      heatmap.2(data.mat, Colv = col.dendro, Rowv = row.dendro, col = col.pal, trace = 'none', ...)
+    }else if(is.logical(RowSideColors)){
+      heatmap.2(data.mat, Colv = col.dendro, Rowv = row.dendro, col = col.pal, trace = 'none', ColSideColors = ColSideColors, ...)
+    }else if(is.logical(ColSideColors)){
+      heatmap.2(data.mat, Colv = col.dendro, Rowv = row.dendro, col = col.pal, trace = 'none', RowSideColors = RowSideColors, ...)
     }else{
-        heatmap.2(data.mat, Colv = col.dendro, Rowv = row.dendro, col = col.pal, trace = 'none', ColSideColors = ColSideColors, ...)
+      heatmap.2(data.mat, Colv = col.dendro, Rowv = row.dendro, col = col.pal, trace = 'none', ColSideColors = ColSideColors, RowSideColors = RowSideColors, ...)
     }
     if(meta.col.bar){
-        legend('topright', legend = sample2color.map[, strat.heat.factor], col = sample2color.map[, color.col], lty = 1)
+        legend('topright', legend = sample2color.map[, strat.heat.factor], col = sample2color.map[, color.col], lty = 1, lwd = 2)
     }
-
+    if(gene.color.bar){
+      legend('bottomleft', legend = gene2color.map[, gene.col.factor], col = gene2color.map[, color.col.gene], lty = 1, lwd = 2)
+    }
+    
     return(cor.res.list)
 }
 

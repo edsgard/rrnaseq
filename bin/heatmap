@@ -21,6 +21,8 @@ spec = matrix(c(
     'meta.file', 'm', 1, 'character',
     'strat.factor', 's', 1, 'character',
     'cluster.col', 'b', 1, 'character',
+    'gene.meta.file', 'g', 1, 'character',
+    'gene.factor', 'f', 1, 'character',
     'cor.meth', 'c', 1, 'character',
     'scale', 'a', 1, 'character',
     'cor.res.file', 'e', 1, 'character',
@@ -44,6 +46,8 @@ usage <- function(spec){
   cat(sprintf(" -u columns.file\n\tInput file containing column-names (typically samples) to subset the data matrix with. Default: NA\n"))
   cat(sprintf(" -m meta.file\n\tInput file in rds-format or tab-separated format, where the first column (row-names) is identical to the first row (column-names) of the data-value matrix. Default: NA\n"))
   cat(sprintf(" -s strat.factor\n\tStratification factor present as a column in 'meta.file'. This will add a column color-bar to the heatmap. Default: nostrat\n"))
+  cat(sprintf(" -g gene.meta.file\n\tInput file in rds-format or tab-separated format, where the first column (row-names) is identical to the first row (row-names) of the data-value matrix. Default: NA\n"))
+  cat(sprintf(" -f gene.factor\n\tStratification factor present as a column in 'gene.meta.file'. This will add a row color-bar to the heatmap. Default: nostrat\n"))
   cat(sprintf(" -b cluster.col\n\tCluster columns. Default: TRUE\n"))
   cat(sprintf(" -c cor.meth\n\tCorrelation method, see the fcn \"cor\". Default: spearman\n"))
   cat(sprintf(" -a scale\n\tCharacter indicating if the values should be centered and scaled in either the row direction or the column direction, or none. See ?heatmap. Default: row\n"))
@@ -73,6 +77,8 @@ if(is.null(opt[['columns.file']])){opt[['columns.file']] = NA;}
 if(is.null(opt[['meta.file']])){opt[['meta.file']] = NA;}
 if(is.null(opt[['cluster.col']])){opt[['cluster.col']] = TRUE;}
 if(is.null(opt[['strat.factor']])){opt[['strat.factor']] = NA;}
+if(is.null(opt[['gene.meta.file']])){opt[['gene.meta.file']] = NA;}
+if(is.null(opt[['gene.factor']])){opt[['gene.factor']] = NA;}
 if(is.null(opt[['cor.meth']])){opt[['cor.meth']] = 'spearman';}
 if(is.null(opt[['scale']])){opt[['scale']] = 'row';}
 if(is.null(opt[['log.transform']])){opt[['log.transform']] = 'log10';}
@@ -132,6 +138,17 @@ if(!is.na(opt[['meta.file']])){
     meta.mat = NA
 }
 
+#Gene meta
+if(!is.na(opt[['gene.meta.file']])){
+    if(length(grep('\\.rds$', opt[['gene.meta.file']])) != 0){
+        gene.meta = readRDS(opt[['gene.meta.file']])
+    }else{
+        gene.meta = read.table(opt[['gene.meta.file']], stringsAsFactors = FALSE, sep = '\t')
+    }
+}else{
+    gene.meta = NA
+}
+
 
 ###
 #Subset data
@@ -157,7 +174,7 @@ if(!is.na(opt[['columns.file']])){
 #Plot
 ###
 pdf(file = opt[['heatmap.pdf']], width = pdf.w, height = pdf.h)
-cor.res.list = rseq.heatmap(data.mat, opt[['cor.meth']], meta.mat, opt[['strat.factor']], log.fcn, cor.res.list, opt[['color.pad']], cexRow = opt[['cex.row']], cexCol = opt[['cex.col']], scale = opt[['scale']], ncores = opt[['ncores']], nblocks = opt[['nblocks']], cluster.col = opt[['cluster.col']])
+cor.res.list = rseq.heatmap(data.mat, opt[['cor.meth']], meta.mat, opt[['strat.factor']], gene.meta, opt[['gene.factor']], log.fcn, cor.res.list, opt[['color.pad']], cexRow = opt[['cex.row']], cexCol = opt[['cex.col']], scale = opt[['scale']], ncores = opt[['ncores']], nblocks = opt[['nblocks']], cluster.col = opt[['cluster.col']])
 dev.off()
 
 
