@@ -42,9 +42,11 @@ plot.cv2vsmean <- function(real.stats, ercc.stats, tech.fit.res, sel.genes, sel.
     
     #Plot the real data
     if(sel.highlight){
-        plot(log10(gene.means), log10(gene.cv2), pch=20, cex=.2, col = gene2color, xlab = xlab, ylab = ylab, xaxt = 'n', yaxt = 'n')
+        ##plot(log10(gene.means), log10(gene.cv2), pch=20, cex=.2, col = gene2color, xlab = xlab, ylab = ylab, xaxt = 'n', yaxt = 'n')
+        smoothScatter(log10(gene.means), log10(gene.cv2), pch=20, cex=.2, col = gene2color, xlab = xlab, ylab = ylab, xaxt = 'n', yaxt = 'n', nrpoints = 0)
+        points(log10(gene.means[sel.genes]), log10(gene.cv2[sel.genes]), pch = 20, cex = .5, col = 'red', xaxt = 'n', yaxt = 'n')
     }else{
-        smoothScatter(log10(gene.means), log10(gene.cv2), pch=20, cex=.2, col = gene2color, xlab = xlab, ylab = ylab, xaxt = 'n', yaxt = 'n')        
+        smoothScatter(log10(gene.means), log10(gene.cv2), pch=20, cex=.2, col = gene2color, xlab = xlab, ylab = ylab, xaxt = 'n', yaxt = 'n')
     }    
     x = xlim[1]:xlim[2]
     y = ylim[1]:ylim[2]
@@ -65,8 +67,10 @@ plot.cv2vsmean <- function(real.stats, ercc.stats, tech.fit.res, sel.genes, sel.
 
 }    
 
-get.real.stats <- function(expr, tech.fit.res, ercc.size.factors, real.size.factors, min.biol.cv2){
+get.real.stats <- function(expr, tech.fit.res, min.biol.cv2){
 
+    suppressMessages(library('matrixStats'))
+    
     #basic summary stats
     gene.means = rowMeans(expr)
     gene.vars = rowVars(expr)
@@ -95,7 +99,11 @@ get.real.stats <- function(expr, tech.fit.res, ercc.size.factors, real.size.fact
     
     #order by test var
     test.res = test.res[order(test.res[, 'gene.var.quants'], decreasing = TRUE), ]
- 
+
+    ##add rank
+    rank = 1:nrow(test.res)
+    test.res = cbind(test.res, rank)
+    
     return(test.res)
 }
 
@@ -141,7 +149,9 @@ plot.ercc.fit <- function(ercc.stats, fit.res, df, quant.min = 0.025, add.quant 
 }    
 
 ercc.fit <- function(ercc.stats, ercc.size.factors, real.size.factors, pass.genes){
-                
+
+    suppressMessages(library('statmod'))
+    
     #Fit
     fit = glmgam.fit(cbind(a0 = 1, a1.tilde = 1 / ercc.stats[pass.genes, 'mean']), ercc.stats[pass.genes, 'cv2'])
 
@@ -168,7 +178,8 @@ ercc.fit <- function(ercc.stats, ercc.size.factors, real.size.factors, pass.gene
 }
 
 get.ercc.stats <- function(ercc){
-    
+    suppressMessages(library('genefilter'))
+
     mean = rowMeans(ercc)
     var = rowVars(ercc)
     cv2 = var / mean^2
@@ -211,7 +222,7 @@ ercc.filter <- function(ercc.raw, n.ercc.min, min.count, min.prop){
     return(ercc.raw)
 }
 
-var.genes.brennecke <- function(count, ercc.raw, meta.mat, out.dir, params, genes.subset = NA, cell2group = NA, plot.ercc.points = TRUE){
+var.genes.brennecke <- function(count, ercc.raw, meta.mat, out.dir, params, genes.subset = NA, cell2group = NA, plot.ercc.points = TRUE, dumpdata = TRUE){
 
     
     ###
@@ -331,7 +342,7 @@ var.genes.brennecke <- function(count, ercc.raw, meta.mat, out.dir, params, gene
     
     ##Stats for all cells
     win.expr = t(apply(expr, 1, winsorize, n.win))
-    real.stats = get.real.stats(win.expr, ercc.fit.res, ercc.size.factors, real.size.factors, min.biol.cv2)
+    real.stats = get.real.stats(win.expr, ercc.fit.res, min.biol.cv2)
 
     ##Split cells by strat.factor
     if(!is.data.frame(cell2group)){
@@ -371,7 +382,7 @@ var.genes.brennecke <- function(count, ercc.raw, meta.mat, out.dir, params, gene
             win.expr.subset = t(apply(expr.subset, 1, winsorize, n.win))
         }
         #get stats
-        j.real.stats = get.real.stats(win.expr.subset, ercc.fit.res, ercc.size.factors, real.size.factors.subset, min.biol.cv2)
+        j.real.stats = get.real.stats(win.expr.subset, ercc.fit.res, min.biol.cv2)
 
         #set removed genes to NA
         rm.genes.mat = matrix(NA, nrow = length(rm.genes), ncol = ncol(j.real.stats), dimnames = list(rm.genes, colnames(j.real.stats)))
@@ -418,12 +429,13 @@ var.genes.brennecke <- function(count, ercc.raw, meta.mat, out.dir, params, gene
     real.stats.list = lapply(real.stats.list, function(j.res){j.res[which(!is.na(j.res[, 'mean'])), ]})
     ercc.stats = ercc.stats[!is.na(ercc.stats[, 'mean']), ]
     
-    #Dump
-    saveRDS(real.stats.list, file = stats.list.rds)
-    saveRDS(all.stats.mat, file = stats.mat.rds)    
-    write.table(all.stats.mat, quote = FALSE, row.names = FALSE, sep = '\t', file = stats.mat.tab)
-    write.table(all.ranked.genes, quote = FALSE, row.names = FALSE, col.names = FALSE, file = ranked.genes.file)
-
+                                        #Dump
+    if(dumpdata){
+        saveRDS(real.stats.list, file = stats.list.rds)
+        saveRDS(all.stats.mat, file = stats.mat.rds)    
+        write.table(all.stats.mat, quote = FALSE, row.names = FALSE, sep = '\t', file = stats.mat.tab)
+        write.table(all.ranked.genes, quote = FALSE, row.names = FALSE, col.names = FALSE, file = ranked.genes.file)
+    }
                 
     ############
     #Plot

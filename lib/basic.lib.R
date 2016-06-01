@@ -1,6 +1,6 @@
 
 
-winsorize <- function(x, n.win = 2){
+winsorize <- function(x, n.win = 1){
 ###Winsorize extreme values
 ###Ex: Two most extreme values (from each side):
 ###t(apply(ed, 1, winsorize, 2))
@@ -33,7 +33,11 @@ pca.twodim.plot <- function(pca, pc.x, pc.y, meta.mat, strat.factor, obs.alpha =
     suppressMessages(library('ggplot2'))
 
     ##get PC basis
-    pca.basis = pca[['x']]
+    if(class(pca) == 'prcomp'){
+        pca.basis = pca[['x']]
+    }else{
+        pca.basis = pca
+    }
     
     ##subset
     pca.basis = pca.basis[, c(pc.x, pc.y)]
@@ -143,41 +147,57 @@ pca.biplot <- function(pca, pc.x = "PC1", pc.y = "PC2", plot.vars, meta.mat, obs
     return(g.plot)
 }
 
-
-rrnaseq.combat <- function(data.mat, meta.mat, batch.factor){
+rrnaseq.combat <- function(data.mat, meta.mat, batch.factor, rm.single = TRUE){
 
     suppressMessages(library('sva'))
+
+    n.rows = nrow(data.mat)
+    n.cols = ncol(data.mat)
+    new.n.rows = 0
+    new.n.cols = 0
     
-    ##Filter out singletons
-    batch = meta.mat[, batch.factor]
-    embryo2ncells = table(batch)
-    embryo.singles = names(embryo2ncells)[which(embryo2ncells == 1)]
-    pass.samples = setdiff(meta.mat[, 'id'], meta.mat[embryo.singles, 'id'])
-    data.mat = data.mat[, pass.samples]
-    meta.mat = meta.mat[pass.samples, ]
-    batch = meta.mat[, batch.factor]
+    while(n.rows != new.n.rows | n.cols != new.n.cols){
+        n.rows = nrow(data.mat)
+        n.cols = ncol(data.mat)
+        
+        ##rm rows (genes) with constant variance
+        const.rows = which(apply(data.mat, 1, function(x){var(x) == 0}))
+        if(length(const.rows) != 0){
+            warning('There are constant rows. These are removed.')
+            data.mat = data.mat[setdiff(1:nrow(data.mat), const.rows), ]
+        }
 
-    ##rm rows (genes) with constant variance
-    const.rows = which(apply(data.mat, 1, function(x){var(x) == 0}))
-    if(length(const.rows) != 0){
-        warning('There are constant rows. These are removed.')
-        data.mat = data.mat[setdiff(1:nrow(data.mat), const.rows), ]
-    }
+        ##rm cols (samples) with constant variance
+        const.cols = which(apply(data.mat, 2, function(x){var(x) == 0}))
+        if(length(const.cols) != 0){
+            warning('There are constant cols. These are removed.')
+            data.mat = data.mat[, setdiff(1:ncol(data.mat), const.cols)]
+        }
+        meta.mat = meta.mat[colnames(data.mat), ]
+        batch = meta.mat[, batch.factor]
 
-    ##rm cols (samples) with constant variance
-    const.cols = which(apply(data.mat, 2, function(x){var(x) == 0}))
-    if(length(const.cols) != 0){
-        warning('There are constant cols. These are removed.')
-        data.mat = data.mat[, setdiff(1:ncol(data.mat), const.cols)]
+        ##Filter out singletons
+        if(rm.single){
+            batch = meta.mat[, batch.factor]
+            embryo2ncells = table(batch)
+            embryo.singles = names(embryo2ncells)[which(embryo2ncells == 1)]
+            embryo.keep = setdiff(meta.mat[, 'stage.embryo'], embryo.singles)        
+            pass.meta = merge(meta.mat, as.matrix(embryo.keep), by.x = 'stage.embryo', by.y = 1)
+            pass.samples = pass.meta[, 'id']
+            data.mat = data.mat[, pass.samples]
+            meta.mat = meta.mat[pass.samples, ]
+            batch = meta.mat[, batch.factor]
+        }
+
+        new.n.rows = nrow(data.mat)
+        new.n.cols = ncol(data.mat)
     }
-    meta.mat = meta.mat[colnames(data.mat), ]
-    batch = meta.mat[, batch.factor]
     
     ##model.matrix
     modcombat = model.matrix(~1, data = meta.mat)
     
     ##combat
-    data.mat.adj = ComBat(dat = data.mat, batch = batch, mod = modcombat, numCovs = NULL, par.prior = TRUE, prior.plots = FALSE)
+    data.mat.adj = ComBat(dat = data.mat, batch = batch, mod = modcombat, par.prior = TRUE, prior.plots = FALSE) #numCovs = NULL
 
     return(data.mat.adj)    
 }

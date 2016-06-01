@@ -110,9 +110,14 @@ if(!is.logical(opt[['genes.subset.file']])){
     genes.subset = NA
 }
 
+if(nrow(ercc.raw) >= 1000){
+    plot.ercc.points = FALSE
+}else{
+    plot.ercc.points = TRUE
+}
 
 ###
 #Execute
 ###
-var.genes.brennecke(count, ercc.raw, meta.mat, opt[['out.dir']], opt, genes.subset)
+var.genes.brennecke(count, ercc.raw, meta.mat, opt[['out.dir']], opt, genes.subset, plot.ercc.points = plot.ercc.points)
 

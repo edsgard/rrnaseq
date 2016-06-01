@@ -1,6 +1,6 @@
 
 
-rseq.hclust <- function(rpkm, cor.meth, cor.res.list, store.col = 'col', ncores = 1, nblocks = 1){
+rseq.hclust <- function(rpkm, cor.meth, cor.res.list, store.col = 'col', ncores = 1, nblocks = 1, hclust.meth = 'complete'){
 
     cor.store.col = paste(store.col, 'cor', sep = '.')
     hclust.store.col = paste(store.col, 'hclust', sep = '.')
@@ -11,7 +11,7 @@ rseq.hclust <- function(rpkm, cor.meth, cor.res.list, store.col = 'col', ncores 
         rpkm = rm.const.vec(rpkm, row.rm = FALSE)
 
         ##dist
-        if(cor.meth == 'euclidean'){
+        if(cor.meth != 'spearman' & cor.meth != 'pearson' & cor.meth != 'kendall'){
             cor.res = NA
             col.dist.mat = dist(t(rpkm), method = cor.meth)
         }else{
@@ -23,7 +23,7 @@ rseq.hclust <- function(rpkm, cor.meth, cor.res.list, store.col = 'col', ncores 
         }
 
         ##hclust
-        clust.res = hclust(col.dist.mat)
+        clust.res = hclust(col.dist.mat, method = hclust.meth)
 
         ##dump
         cor.res.list = list()
@@ -39,7 +39,7 @@ rseq.hclust <- function(rpkm, cor.meth, cor.res.list, store.col = 'col', ncores 
                 clust.res = cor.res.list[[hclust.store.col]]
             }else{            
                 col.dist.mat = as.dist(((cor.res * -1) + 1) / 2)
-                clust.res = hclust(col.dist.mat)
+                clust.res = hclust(col.dist.mat, method = hclust.meth)
 
                 #store result
                 cor.res.list[[hclust.store.col]] = clust.res
@@ -48,13 +48,19 @@ rseq.hclust <- function(rpkm, cor.meth, cor.res.list, store.col = 'col', ncores 
 
             #rm cols with constant variance
             rpkm = rm.const.vec(rpkm, row.rm = FALSE)
-        
-            #Pairwise dist btw columns
-            cor.res = bigcor.par(rpkm, use="pairwise.complete.obs", method = cor.meth, ncores = ncores, nblocks = nblocks)
 
-            #get dist and hclust 
-            col.dist.mat = as.dist(((cor.res * -1) + 1) / 2)
-            clust.res = hclust(col.dist.mat)
+            if(cor.meth != 'spearman' & cor.meth != 'pearson' & cor.meth != 'kendall'){
+                cor.res = NA
+                col.dist.mat = dist(t(rpkm), method = cor.meth)
+            }else{
+
+                ##Pairwise dist btw columns
+                cor.res = bigcor.par(rpkm, use="pairwise.complete.obs", method = cor.meth, ncores = ncores, nblocks = nblocks)
+
+                ##get dist and hclust 
+                col.dist.mat = as.dist(((cor.res * -1) + 1) / 2)
+            }
+            clust.res = hclust(col.dist.mat, method = hclust.meth)
 
             #store result
             cor.res.list[[cor.store.col]] = cor.res

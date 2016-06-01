@@ -207,10 +207,9 @@ mapstats <- function(meta.file, counts.file, res.dir, strat.factor = 'nostrat', 
 
         #histogram log10
         pdf(file = file.path(res.dir, 'n.reads.dens.pdf'))
-        plot(density(log10(meta.mat[, 'n.reads'])), xlab = 'log10(n.reads)', main= '', col = meta.mat[, strat.factor.color])
+        plot(density(log10(meta.mat[, 'n.reads'])), xlab = 'log10(n.reads)', main= '', col = 'black')
         #abline(v = log10(nreads.cutoff))
-        dev.off()
-        
+        dev.off()        
 
         #barplot    
         pdf(file = file.path(res.dir, 'n.reads.bar.pdf'), width = pdf.w, height = pdf.h)
@@ -221,7 +220,40 @@ mapstats <- function(meta.file, counts.file, res.dir, strat.factor = 'nostrat', 
         legend('topleft', legend = factor2color.map[, strat.factor], col = factor2color.map[, strat.factor.color], lty = 1)
         dev.off()
 
+        ##*##
+        ##density
+        ##*##
 
+        nreads.dens.list = tapply(log10(meta.mat[, 'n.reads']), meta.mat[, strat.factor], density)
+
+        #colormap
+        strat.factor.col = paste(strat.factor, '.color', sep = '')
+        strat.factor2color.map = unique(meta.mat[, c(strat.factor, strat.factor.col)])
+        rownames(strat.factor2color.map) = strat.factor2color.map[, strat.factor]
+        strat.factor2color.map = strat.factor2color.map[order(strat.factor2color.map[, strat.factor]), ]
+        
+        #get ranges
+        xlim = range(unlist(lapply(nreads.dens.list, '[[', 'x'))) #xlim = c(-100, 100)
+        ylim = range(unlist(lapply(nreads.dens.list, '[[', 'y')))
+
+        #strata
+        strata = names(nreads.dens.list)
+        n.strata = length(strata)
+        
+        #plot
+        pdf(file = file.path(res.dir, 'n.reads.dens.strat.pdf'))
+        j.stratum.it = 1
+        j.stratum = strata[j.stratum.it]
+        plot(nreads.dens.list[[j.stratum]], xlab = 'n.reads', main = '', ylab = 'Density: # of samples', col = strat.factor2color.map[j.stratum, strat.factor.col], xlim = xlim, ylim = ylim)
+        for(j.stratum.it in 2:n.strata){
+            j.stratum = strata[j.stratum.it]
+            lines(nreads.dens.list[[j.stratum]], col = strat.factor2color.map[j.stratum, strat.factor.col])
+        }
+        legend('topright', legend = strat.factor2color.map[, strat.factor], col = strat.factor2color.map[, strat.factor.col], lty = 1)
+        ##abline(v = n.genes.cutoff, col = 'grey', lty = 2)
+        dev.off()
+
+        
     
         ###
         #Percent mapped reads
@@ -253,7 +285,7 @@ mapstats <- function(meta.file, counts.file, res.dir, strat.factor = 'nostrat', 
         legend('topleft', legend = factor2color.map[, strat.factor], col = factor2color.map[, strat.factor.color], lty = 1)
         dev.off()
 
-        #density
+        ##density
         pdf(file = file.path(res.dir, 'n.reads.uniq.mapped.dens.pdf'))
         plot(density(log10(meta.mat[, 'n.reads.uniq.mapped'])), xlab = 'log10(n.reads)', main= '', col = meta.mat[, strat.factor.color])
         dev.off()
@@ -435,7 +467,7 @@ gene.filter <- function(meta.file, rpkm.file, rpkm.postqc.file, gene2nsamples.pd
     }
 }
 
-sample2ngenes.expr <- function(rpkm, meta.mat, sample2ngenes.pdf, log.rpkm.cutoff, n.genes.cutoff, qc.meta.mat, filter.bool, plot.bool, meta.add, strat.factor = 'nostrat'){
+sample2ngenes.expr <- function(rpkm, meta.mat, sample2ngenes.pdf, log.rpkm.cutoff, n.genes.cutoff, qc.meta.mat, filter.bool, plot.bool, meta.add, strat.factor = 'nostrat', xlim = NA, ylim = NA){
 
 
     suppressMessages(library('RColorBrewer'))
@@ -475,9 +507,13 @@ sample2ngenes.expr <- function(rpkm, meta.mat, sample2ngenes.pdf, log.rpkm.cutof
         #Create output dir
         dir.create(dirname(sample2ngenes.pdf), showWarnings = FALSE, recursive = TRUE)
 
-        #get ranges
-        xlim = range(unlist(lapply(ngenes.dens.list, '[[', 'x'))) #xlim = c(-100, 100)
-        ylim = range(unlist(lapply(ngenes.dens.list, '[[', 'y')))
+        ##get ranges
+        if(is.logical(xlim)){
+            xlim = range(unlist(lapply(ngenes.dens.list, '[[', 'x'))) #xlim = c(-100, 100)
+        }
+        if(is.logical(ylim)){
+            ylim = range(unlist(lapply(ngenes.dens.list, '[[', 'y')))
+        }
 
         #strata
         strata = names(ngenes.dens.list)
@@ -618,7 +654,7 @@ sampledist.heatmap <- function(meta.mat, rpkm, sample.heatmap.pdf = 'sample.heat
     return(cor.res.list)
 }
 
-sampledist.boxplot <- function(meta.mat, rpkm, sample.cor.pdf, qc.meta.file, cor.meth, max.cor.cutoff, strat.factor = 'nostrat', cex.axis, filter.bool, plot.bool, cor.res.list = NA, ...){
+sampledist.boxplot <- function(meta.mat, rpkm, sample.cor.pdf, qc.meta.file, cor.meth, max.cor.cutoff, strat.factor = 'nostrat', cex.axis, filter.bool, plot.bool, cor.res.list = NA, xlim = NA, ylim = NA, ...){
 
 
     suppressMessages(library('RColorBrewer'))
@@ -715,9 +751,13 @@ sampledist.boxplot <- function(meta.mat, rpkm, sample.cor.pdf, qc.meta.file, cor
         strat2maxcor.dens.list = lapply(strat2sample.list, function(jstrat.samples, max.cor){density(max.cor[jstrat.samples])}, max.cor = max.cor)
 
         ##get ranges
-        xlim = range(unlist(lapply(strat2maxcor.dens.list, '[[', 'x')))
-        ylim = range(unlist(lapply(strat2maxcor.dens.list, '[[', 'y')))
-
+        if(is.logical(xlim)){
+            xlim = range(unlist(lapply(strat2maxcor.dens.list, '[[', 'x')))
+        }
+        if(is.logical(ylim)){
+            ylim = range(unlist(lapply(strat2maxcor.dens.list, '[[', 'y')))
+        }
+        
         #colormap
         strat.factor.col = paste(strat.factor, '.color', sep = '')
         strat.factor2color.map = unique(meta.mat.filt[, c(strat.factor, strat.factor.col)])        
