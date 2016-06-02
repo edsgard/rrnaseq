@@ -8,7 +8,7 @@ Currently the starting input is a tab-separated file with RPKM values and raw re
 
 
 ###INSTALLATION
-1. If you don't want version control you find releases at https://github.com/edajeda/rrnaseq/releases
+1. The latest stable release can be found <a href="https://github.com/edsgard/rrnaseq/releases">here</a>.
 2. Install R dependencies with install.packages or via biocLite. In R:
 
 		pkgs = c('DESeq2', 'genefilter', 'statmod', 'gplots',
